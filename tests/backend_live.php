@@ -16,7 +16,7 @@ verify(count($snapshot['live_calls'])===2, 'two legs of one Linkedid count as on
 verify(count($snapshot['live_calls'][0]['channels'])===2, 'both linked call legs remain inspectable');
 verify($snapshot['live_calls'][0]['extensions']===array('100','101'), 'both observed local extensions are mapped to the linked call');
 verify($snapshot['live_calls'][0]['elapsed_seconds']===30, 'elapsed duration uses the oldest real channel start');
-verify($snapshot['live_calls'][0]['direction']===NULL, 'direction is unknown when AMI does not prove it');
+verify($snapshot['live_calls'][0]['direction']==='internal', 'observed known-phone origin and two local endpoints identify an internal call');
 verify($snapshot['live_channels'][0]['answered_seconds']===NULL, 'channel age is never mislabeled as answered duration');
 $a['ConnectedLineNum']='102';
 $transferred=mytelBuildLiveSnapshot(array($a,$b),$phones,array(),1001);
@@ -51,7 +51,7 @@ eval(substr($amiSource, strpos($amiSource, 'class AGI_AsteriskManager2')));
 $ami = (new ReflectionClass('AGI_AsteriskManager2'))->newInstanceWithoutConstructor();
 $parse = new ReflectionMethod('AGI_AsteriskManager2', 'encontrarPaquetes');
 $parse->setAccessible(TRUE);
-$wire = "Event: Status\r\nChannel: PJSIP/100-00000001\r\nVariable: CDR(answer,u)=980.000000\r\nVariable: PRIVATE_AUTH=never-expose\r\nVariable: CHANNEL(onhold)=1\r\n\r\n";
+$wire = "Event: Status\r\nChannel: PJSIP/100-00000001\r\nVariable: CDR(answer,u)=980.000000\r\nVariable: PRIVATE_AUTH=never-expose\r\nVariable: DIRECTION=INBOUND\r\nVariable: CHANNEL(onhold)=1\r\n\r\n";
 $args = array(&$wire);
 $packets = $parse->invokeArgs($ami, $args);
 verify(isset($packets[0]['Variables']['CDR(answer,u)'], $packets[0]['Variables']['CHANNEL(onhold)']), 'AMI parser retains both safe repeated Variable headers');
@@ -59,5 +59,10 @@ verify(!isset($packets[0]['Variables']['PRIVATE_AUTH']), 'AMI parser excludes va
 $a['Variables'] = $packets[0]['Variables'];
 $safe = mytelBuildLiveSnapshot(array($a), $phones, array(), 1000);
 verify(!isset($safe['live_channels'][0]['Variables']), 'snapshot never exposes the raw channel variable dictionary');
+verify($safe['live_channels'][0]['direction'] === 'incoming' && $safe['live_calls'][0]['direction'] === 'incoming', 'inherited Issabel INBOUND evidence survives context changes into normalized channel and call direction');
+$a['Variables']['DIRECTION'] = 'unrecognized-private-value';
+$a['Linkedid'] = 'older-origin-no-longer-visible';
+$unknownDirection = mytelBuildLiveSnapshot(array($a), $phones, array(), 1000);
+verify($unknownDirection['live_channels'][0]['direction'] === NULL && strpos(json_encode($unknownDirection), 'unrecognized-private-value') === FALSE, 'unrecognized direction variables remain private and do not invent a direction');
 echo "$checks checks; $failures failures\n";
 exit($failures ? 1 : 0);
