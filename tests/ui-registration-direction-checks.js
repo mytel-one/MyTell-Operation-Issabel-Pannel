@@ -1,0 +1,45 @@
+/* Run on a clean connected synthetic fixture through browser evaluate. */
+async () => {
+    const checks=[];
+    const assert=(condition,message)=>{if(!condition)throw new Error(message);checks.push(message);};
+    const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));await pause(1100);
+    const card=number=>document.querySelector('.ExtensionStyle[data-idattr="PJSIP/'+number+'"]');
+    const border=element=>getComputedStyle(element).borderInlineStartColor;
+    const green='rgb(22, 139, 100)',gray='rgb(132, 147, 167)';
+    assert(border(card('201'))===green && border(card('202'))===green && border(card('203'))===green,'Ready, in-call and ringing registered extensions all retain green registration accents');
+    assert(card('202').querySelector('.mytel-extension-state').textContent==='Online · In call' && card('203').querySelector('.mytel-extension-state').textContent==='Online · Ringing','Call activity stays explicit without masking online registration');
+    assert(border(card('204'))===gray && card('204').querySelector('.mytel-extension-state').textContent==='Offline','Unregistered extensions use gray accents and explicit offline text');
+    debug_root.extensions[1].registered=false;window.dispatchEvent(new CustomEvent('mytel:snapshot',{detail:debug_root.latestSnapshot}));await pause(220);
+    assert(border(card('202'))===gray && card('202').querySelector('.mytel-extension-state').textContent==='Offline · In call','An active call cannot make an unregistered extension look online');
+    debug_root.extensions[1].registered=true;window.dispatchEvent(new CustomEvent('mytel:snapshot',{detail:debug_root.latestSnapshot}));await pause(220);
+    assert(border(document.querySelector('.mytel-iptrunk-card.pbxactive'))===green && border(document.querySelector('.mytel-iptrunk-card:not(.pbxactive)'))===gray,'Connected trunks are green and unregistered trunks gray');
+    const count=direction=>document.querySelector('[data-direction-count="'+direction+'"]').textContent;
+    assert(count('all')==='5' && count('incoming')==='2' && count('outgoing')==='1' && count('internal')==='1' && count('unknown')==='1','Direction totals count conversations once across incoming, outgoing, internal and unknown categories');
+    document.querySelector('[data-call-direction=incoming]').click();
+    assert(document.querySelectorAll('[data-live-call-rows] tr').length===2 && [...document.querySelectorAll('[data-live-call-rows] .mytel-call-direction')].every(element=>element.textContent==='Incoming'),'Incoming filter shows only explicitly classified incoming calls');
+    const status=document.querySelector('#mytel-call-state');status.value='in-call';status.dispatchEvent(new Event('change',{bubbles:true}));
+    assert(document.querySelectorAll('[data-live-call-rows] tr').length===1,'Direction and activity status filters combine correctly');
+    status.value='all';status.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('[data-call-direction=outgoing]').click();
+    assert(document.querySelectorAll('[data-live-call-rows] tr').length===1 && document.querySelector('[data-live-call-rows] .mytel-call-direction').textContent==='Outgoing','Outgoing filter is separate from incoming calls');
+    document.querySelector('[data-live-call-rows] button').click();
+    const dialog=document.querySelector('#mytel-extension-inspector');
+    assert([...dialog.querySelectorAll('.mytel-call-direction-value')].every(element=>element.textContent==='Outgoing'),'Call and channel inspectors show readable reported direction labels');
+    dialog.querySelector('[data-action=close-inspector]').click();await pause(0);
+    document.querySelector('[data-call-direction=unknown]').click();
+    assert(document.querySelectorAll('[data-live-call-rows] tr').length===1 && document.querySelector('[data-live-call-rows] .mytel-call-direction').textContent==='Unknown','Unclassified direction remains visibly unknown');
+    document.querySelector('[data-call-direction=all]').click();
+    card('201').click();
+    assert(dialog.querySelector('.mytel-registration-value.online').textContent==='Registered','Extension inspector registration state carries the same online semantics');
+    dialog.querySelector('[data-action=close-inspector]').click();await pause(0);
+    const parking=document.querySelector('.mytel-parking-collapse');
+    assert(parking && !parking.open && parking.querySelector('.mytel-parking-count').textContent==='1 slot','Call parking starts closed with a known slot count');
+    parking.querySelector('summary').click();await pause(0);
+    assert(parking.open && parking.querySelector('.parkinglots-list img'),'Expanded parking retains the destination icon and slot content');
+    window.dispatchEvent(new CustomEvent('mytel:snapshot',{detail:debug_root.latestSnapshot}));await pause(80);
+    assert(parking===document.querySelector('.mytel-parking-collapse') && parking.open,'Parking disclosure state survives a PBX snapshot update');
+    parking.querySelector('summary').click();await pause(0);
+    assert(!parking.open,'Call parking can be collapsed again');
+    assert(document.documentElement.scrollWidth<=innerWidth,'The updated workspace has no page-level horizontal overflow');
+    return {passed:checks.length,checks,viewport:[innerWidth,innerHeight]};
+}

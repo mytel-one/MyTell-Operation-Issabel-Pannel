@@ -9,6 +9,7 @@
     var phones = [];
     var callQuery = '';
     var callFilter = 'all';
+    var directionFilter = 'all';
     var tableSignature = '';
     var inspectorSignature = '';
     var selection = null;
@@ -51,9 +52,9 @@
     function sourceKey() { return 'mytel.operator.source.'+(global.module_name || 'control_panel'); }
     function registered(phone) { var value=model.get(phone,'registered',false); return value===true || value===1 || value==='1'; }
     function findPhone(extension) { return phones.filter(function (phone) { return String(model.get(phone,'extension',''))===String(extension); })[0] || null; }
-    function appendPair(list, label, value) {
+    function appendPair(list, label, value, className) {
         list.appendChild(node('dt','',label));
-        list.appendChild(node('dd','',model.present(value)?value:'Not reported'));
+        list.appendChild(node('dd',className || '',model.present(value)?value:'Not reported'));
     }
     function setText(element, value) { if (element && element.textContent!==String(value)) element.textContent=String(value); }
     function button(label, action, attributes) {
@@ -99,7 +100,9 @@
         select.disabled=!loaded() || options.length===0 || !!requestInFlight;
     }
     function renderCallRows(container) {
-        var filtered=model.filterCalls(calls,callQuery,callFilter);
+        var filtered=model.filterCalls(calls,callQuery,callFilter,directionFilter);
+        var totals=model.directionTotals(calls);
+        Object.keys(totals).forEach(function(direction){setText(container.querySelector('[data-direction-count="'+direction+'"]'),loaded()?totals[direction]:'—');});
         var signature=stableSignature(filtered);
         var body=container.querySelector('[data-live-call-rows]');
         if (!body) return;
@@ -109,11 +112,12 @@
                 var row=node('tr');
                 var extensionCell=node('td');
                 extensionCell.appendChild(node('strong','',call.extensions.length?call.extensions.join(', '):'Unassigned channel'));
-                extensionCell.appendChild(node('span','mytel-cell-secondary',(call.extensionNames.length?call.extensionNames.join(', ')+' · ':'')+call.legs.length+' channel'+(call.legs.length===1?'':'s')+(call.direction?' · '+call.direction:'')));
+                extensionCell.appendChild(node('span','mytel-cell-secondary',(call.extensionNames.length?call.extensionNames.join(', ')+' · ':'')+call.legs.length+' channel'+(call.legs.length===1?'':'s')));
                 row.appendChild(extensionCell);
                 row.appendChild(node('td','mytel-number',call.caller || 'Not reported'));
                 row.appendChild(node('td','mytel-number',call.connected || 'Not reported'));
                 var stateCell=node('td'); stateCell.appendChild(node('span','mytel-call-state '+call.state,callStateLabel(call))); row.appendChild(stateCell);
+                var directionCell=node('td');directionCell.appendChild(node('span','mytel-call-direction '+(call.direction || 'unknown'),model.directionLabel(call.direction)));row.appendChild(directionCell);
                 var elapsed=node('td'); elapsed.appendChild(clock(call.started)); row.appendChild(elapsed);
                 row.appendChild(node('td','mytel-number',call.queueIds.length?call.queueIds.join(', '):'Not reported'));
                 var details=node('td'); details.appendChild(button('Details','inspect-call',{'data-call-id':call.id,'aria-label':'View call details for '+(call.extensions.join(', ') || call.caller || 'unassigned channel')})); row.appendChild(details);
@@ -124,7 +128,7 @@
         var empty=container.querySelector('[data-live-empty]');
         if (empty) {
             empty.hidden=filtered.length>0;
-            setText(empty,!loaded()?'Waiting for live-call data…':calls.length===0?'No active calls. New calls will appear automatically.':'No calls match this search and status filter.');
+            setText(empty,!loaded()?'Waiting for live-call data…':calls.length===0?'No active calls. New calls will appear automatically.':'No calls match this search, status and direction filter.');
         }
         setText(container.querySelector('[data-live-count]'),loaded()?calls.length:'—');
         setText(container.querySelector('[data-live-results]'),loaded()?filtered.length+' of '+calls.length+' calls':'');
@@ -158,7 +162,7 @@
         appendPair(facts,'Connected party',leg.connected); appendPair(facts,'Connected name',leg.connectedName);
         facts.appendChild(node('dt','','Channel elapsed')); var durationCell=node('dd');durationCell.appendChild(clock(leg.started)); facts.appendChild(durationCell);
         facts.appendChild(node('dt','','Answered time (PBX)')); var answered=node('dd');var answeredClock=leg.answered!=null?clock(leg.answered):node('time','',model.duration(leg.answeredSeconds));if(leg.answered==null){answeredClock.setAttribute('data-answered-channel',leg.channel || '');answeredClock.setAttribute('data-answered-uniqueid',leg.uniqueid || '');}answered.appendChild(answeredClock); facts.appendChild(answered);
-        appendPair(facts,'On hold',leg.hold==null?null:leg.hold?'Yes':'No'); appendPair(facts,'Direction',leg.direction);
+        appendPair(facts,'On hold',leg.hold==null?null:leg.hold?'Yes':'No'); appendPair(facts,'Direction',model.directionLabel(leg.direction),'mytel-call-direction-value '+(leg.direction || 'unknown'));
         card.appendChild(facts);
         var technical=node('details','mytel-channel-details');technical.appendChild(node('summary','','Channel details'));
         var metadata=node('dl','mytel-detail-grid');
@@ -181,7 +185,7 @@
         var legs=phone?model.list(model.get(phone,'active',[])).map(function (input) { return model.normalizeLeg(input,model.get(phone,'extension',null)); }):call?call.legs:[];
         var memberships=phone?model.queueMemberships(model.list(model.get(controller(),'queues',null)),phone):[];
         var visibleAction=actionState();
-        var signature=stableSignature({selection:selection,description:model.get(phone,'description',null),registered:phone&&registered(phone),ip:model.get(phone,'ip',null),tech:model.get(phone,'tech',null),legs:legs,memberships:memberships,call:call,source:sourceExtension,fresh:fresh(),action:visibleAction});
+        var signature=stableSignature({selection:selection,description:model.get(phone,'description',null),registered:phone&&registered(phone),ip:model.get(phone,'ip',null),tech:model.get(phone,'tech',null),deviceState:model.get(phone,'device_state',null),registrationBasis:model.get(phone,'registration_basis',null),legs:legs,memberships:memberships,call:call,source:sourceExtension,fresh:fresh(),action:visibleAction});
         if (!force && signature===inspectorSignature) return;
         inspectorSignature=signature;
         var openDetails=Array.prototype.map.call(target.querySelectorAll('.mytel-channel-details[open]'),function(details){return details.parentElement.getAttribute('data-channel-key');});
@@ -194,7 +198,8 @@
         if (phone) {
             target.appendChild(node('h3','mytel-inspector-name',model.get(phone,'description','')));
             var facts=node('dl','mytel-detail-grid');
-            appendPair(facts,'Registration',registered(phone)?'Registered':'Unregistered'); appendPair(facts,'IP address',model.get(phone,'ip',null));
+            appendPair(facts,'Registration',registered(phone)?'Registered':'Unregistered','mytel-registration-value '+(registered(phone)?'online':'offline')); appendPair(facts,'IP address',model.get(phone,'ip',null));
+            appendPair(facts,'Device state',model.get(phone,'device_state',null));appendPair(facts,'Registration basis',model.get(phone,'registration_basis',null));
             appendPair(facts,'Technology',model.get(phone,'tech',null)); appendPair(facts,'Device channel',model.get(phone,'channel',null));
             appendPair(facts,'Active channels',legs.length); appendPair(facts,'New voicemail',model.get(phone,'NewMessages',null)); target.appendChild(facts);
             var callback=node('div','mytel-callback-controls');
@@ -210,7 +215,7 @@
             var memberLabels={'0':'Unknown','1':'Available','2':'In use','3':'Busy','4':'Invalid','5':'Unavailable','6':'Ringing','7':'Ringing / in use','8':'On hold'};
             memberships.forEach(function(member){var item=node('section','mytel-membership');item.appendChild(node('h4','','Queue '+member.queue+(member.description?' · '+member.description:'')));var facts=node('dl','mytel-detail-grid');appendPair(facts,'Agent status',memberLabels[String(member.status)] || member.status);appendPair(facts,'Paused',member.paused?'Yes'+(member.pausedReason?' · '+member.pausedReason:''):'No');appendPair(facts,'Calls taken',member.callsTaken);appendPair(facts,'Penalty',member.penalty);appendPair(facts,'In call',member.inCall==null?null:[true,1,'1'].indexOf(member.inCall)!==-1?'Yes':'No');appendPair(facts,'Last call',member.lastCall && member.lastCall>0?new Date(member.lastCall*1000).toLocaleString('en-GB'):null);item.appendChild(facts);item.appendChild(node('p','mytel-action-note','Counters since last PBX statistics reset.'));target.appendChild(item);});
         } else {
-            var summary=node('dl','mytel-detail-grid');appendPair(summary,'Extensions',call.extensions.join(', '));appendPair(summary,'Status',callStateLabel(call));appendPair(summary,'Queue',call.queueIds.join(', '));appendPair(summary,'Direction',call.direction);target.appendChild(summary);
+            var summary=node('dl','mytel-detail-grid');appendPair(summary,'Extensions',call.extensions.join(', '));appendPair(summary,'Status',callStateLabel(call));appendPair(summary,'Queue',call.queueIds.join(', '));appendPair(summary,'Direction',model.directionLabel(call.direction),'mytel-call-direction-value '+(call.direction || 'unknown'));target.appendChild(summary);
         }
         var feedback=node('p','mytel-action-feedback '+visibleAction.kind,visibleAction.pending?(visibleAction.message || 'Sending request…'):visibleAction.message);feedback.setAttribute('role','status');target.appendChild(feedback);
         target.appendChild(node('h3','mytel-inspector-subtitle','Active calls / channels ('+legs.length+')'));
@@ -263,6 +268,8 @@
             if(event.target.id==='mytel-source-extension'){sourceExtension=event.target.value;try{global.localStorage.setItem(sourceKey(),sourceExtension);}catch(ignore){}renderInspector(container,true);}
         });
         container.addEventListener('click',function (event) {
+            var direction=event.target.closest('[data-call-direction]');
+            if(direction && container.contains(direction)){directionFilter=direction.getAttribute('data-call-direction');Array.prototype.forEach.call(container.querySelectorAll('[data-call-direction]'),function(item){item.setAttribute('aria-pressed',item===direction?'true':'false');});update();return;}
             var action=event.target.closest('[data-action]');
             if(action && container.contains(action)) {
                 var name=action.getAttribute('data-action');

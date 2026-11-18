@@ -156,11 +156,14 @@
             card.hidden = !shown;
             if (shown) visible++;
             card.setAttribute('data-phone-state', state);
+            card.setAttribute('data-registration', isRegistered(phone) ? 'online' : 'offline');
             card.setAttribute('tabindex', '0');
             card.setAttribute('role', 'button');
             card.setAttribute('aria-pressed', global.selectedContainer === card ? 'true' : 'false');
-            var stateName = {online: phrase('آماده', 'Ready'), offline: phrase('آفلاین', 'Offline'), busy: phrase('در مکالمه', 'In call'), ringing: phrase('در حال زنگ', 'Ringing')}[state];
-            card.setAttribute('aria-label', read(phone, 'extension', '') + ' ' + read(phone, 'description', '') + '، ' + stateName);
+            var registrationName = isRegistered(phone) ? phrase('آنلاین', 'Online') : phrase('آفلاین', 'Offline');
+            var activityName = {busy: phrase('در مکالمه', 'In call'), ringing: phrase('در حال زنگ', 'Ringing')}[state];
+            var stateName = registrationName + (activityName ? ' · ' + activityName : '');
+            card.setAttribute('aria-label', read(phone, 'extension', '') + ' ' + read(phone, 'description', '') + (english ? ', ' : '، ') + stateName);
             text(card, '.mytel-extension-state', stateName);
         });
         Array.prototype.forEach.call(root.querySelectorAll('.mytel-area-panel'), function (panel) {

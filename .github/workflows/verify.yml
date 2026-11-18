@@ -36,6 +36,8 @@ jobs:
           php tests/backend_regressions.php control_panel_en
           php tests/backend_live.php control_panel
           php tests/backend_live.php control_panel_en
+          php tests/direction_regressions.php control_panel
+          php tests/direction_regressions.php control_panel_en
           php tests/snapshot_startup.php control_panel
           php tests/snapshot_startup.php control_panel_en
       - name: Browser logic regressions

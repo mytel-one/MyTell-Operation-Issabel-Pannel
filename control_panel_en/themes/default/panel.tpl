@@ -1,5 +1,5 @@
 <div id="controlPanelApplication" dir="ltr" data-language="en">
-<link rel="stylesheet" href="modules/{$module_name}/themes/default/css/mytel.css?v=2.0.0">
+<link rel="stylesheet" href="modules/{$module_name}/themes/default/css/mytel.css?v=2.0.1">
 <script type="text/x-handlebars" data-template-name="desktop">
 {literal}
 <div class="mytel-workspace containerAll">
@@ -29,7 +29,8 @@
   <section class="mytel-live-calls mytel-surface" aria-labelledby="mytel-live-title">
     <div class="mytel-section-heading"><div><h2 id="mytel-live-title" tabindex="-1">Live calls <span class="mytel-call-count" data-live-count>—</span></h2><p>Live conversations and ringing calls across your PBX</p></div><span class="mytel-data-status" data-freshness>Waiting for data</span></div>
     <div class="mytel-call-toolbar"><label class="mytel-search"><span aria-hidden="true">⌕</span><span class="mytel-visually-hidden">Search calls, callers or extensions</span><input type="search" id="mytel-call-search" placeholder="Search calls, callers or extensions…" autocomplete="off"></label><label class="mytel-call-state-label" for="mytel-call-state">Status <select id="mytel-call-state"><option value="all">All calls</option><option value="ringing">Ringing</option><option value="waiting">Waiting</option><option value="in-call">In call</option><option value="hold">On hold</option><option value="dialing">Dialing</option><option value="busy">Busy</option><option value="down">Down</option><option value="off-hook">Off hook</option><option value="pre-ring">Pre-ring</option><option value="reported">Other reported state</option><option value="unknown">Not reported</option></select></label></div>
-    <div class="mytel-table-scroll"><table class="mytel-call-table"><thead><tr><th scope="col">Extension / channel</th><th scope="col">Caller</th><th scope="col">Connected party</th><th scope="col">Status</th><th scope="col">Elapsed</th><th scope="col">Queue</th><th scope="col"><span class="mytel-visually-hidden">Details</span></th></tr></thead><tbody data-live-call-rows></tbody></table></div>
+    <div class="mytel-direction-filters" role="group" aria-label="Filter calls by direction"><button type="button" data-call-direction="all" aria-pressed="true">All <span data-direction-count="all">—</span></button><button type="button" data-call-direction="incoming" aria-pressed="false">Incoming <span data-direction-count="incoming">—</span></button><button type="button" data-call-direction="outgoing" aria-pressed="false">Outgoing <span data-direction-count="outgoing">—</span></button><button type="button" data-call-direction="internal" aria-pressed="false">Internal <span data-direction-count="internal">—</span></button><button type="button" data-call-direction="unknown" aria-pressed="false">Unknown <span data-direction-count="unknown">—</span></button></div>
+    <div class="mytel-table-scroll"><table class="mytel-call-table"><thead><tr><th scope="col">Extension / channel</th><th scope="col">Caller</th><th scope="col">Connected party</th><th scope="col">Status</th><th scope="col">Direction</th><th scope="col">Elapsed</th><th scope="col">Queue</th><th scope="col"><span class="mytel-visually-hidden">Details</span></th></tr></thead><tbody data-live-call-rows></tbody></table></div>
     <p class="mytel-call-empty" data-live-empty role="status">Loading live calls…</p><div class="mytel-call-footnote"><span data-live-results></span><span>Elapsed includes ringing. Answered time is available in call details when reported.</span></div>
   </section>
   <div class="mytel-workspace-grid">
@@ -81,9 +82,9 @@
       </section>
       <section class="mytel-surface mytel-resources"><div class="mytel-section-heading"><div><h2>PBX resources</h2><p>Trunks, conferences and parking</p></div></div>
         {{#view App.BaseSortableView}}
-          {{#view App.PBXPanelView controllerBinding="iptrunks" class="mytel-resource-panel"}}<h3>IP trunks</h3>{{#if finishedloading}}{{#each}}{{view App.IPTrunkView}}{{else}}<p class="mytel-empty mytel-empty-small">No trunks to display.</p>{{/each}}{{/if}}{{/view}}
+          {{#view App.PBXPanelView controllerBinding="iptrunks" class="mytel-resource-panel"}}<h3>IP trunks</h3>{{#if finishedloading}}{{#each}}{{view App.IPTrunkView class="mytel-iptrunk-card"}}{{else}}<p class="mytel-empty mytel-empty-small">No trunks to display.</p>{{/each}}{{/if}}{{/view}}
           {{#view App.PBXPanelView controllerBinding="conferences" class="mytel-resource-panel"}}<h3>Conferences</h3>{{#if finishedloading}}{{#each}}{{view App.ConferenceView class="ConferenceView-large"}}{{else}}<p class="mytel-empty mytel-empty-small">No conferences configured.</p>{{/each}}{{/if}}{{/view}}
-          {{#view App.PBXPanelView controllerBinding="parkinglots" class="mytel-resource-panel"}}<h3>Call parking</h3>{{#if finishedloading}}<div class="parkinglots-list">{{#each}}{{view App.ParkinglotView class="ParkinglotView-large"}}{{else}}<p class="mytel-empty mytel-empty-small">No parking slots configured.</p>{{/each}}</div>{{/if}}{{/view}}
+          {{#view App.PBXPanelView controllerBinding="parkinglots" class="mytel-resource-panel"}}<details class="mytel-parking-collapse"><summary><span>Call parking</span><span class="mytel-parking-count">{{#if finishedloading}}{{length}} slots{{else}}Loading…{{/if}}</span></summary>{{#if finishedloading}}<div class="parkinglots-list">{{#each}}{{view App.ParkinglotView class="ParkinglotView-large"}}{{else}}<p class="mytel-empty mytel-empty-small">No parking slots configured.</p>{{/each}}</div>{{/if}}</details>{{/view}}
           {{#view App.PBXPanelView controllerBinding="dahdi" class="mytel-resource-panel mytel-dahdi"}}{{#if length}}<h3>DAHDI lines</h3>{{#each}}{{view App.DAHDISpanView}}{{/each}}{{/if}}{{/view}}
         {{/view}}
       </section>
@@ -98,7 +99,7 @@
 <script type="text/x-handlebars" data-template-name="extension">
 {literal}
 <div class="mytel-extension-body" {{bindAttr data-extension="extension" data-description="description" data-status="trunkstate"}}>
-  <div class="mytel-extension-top"><span class="mytel-extension-number" dir="ltr">{{extension}}</span><span class="mytel-extension-state">{{#if registered}}{{#if active}}Busy{{else}}Ready{{/if}}{{else}}Offline{{/if}}</span></div>
+  <div class="mytel-extension-top"><span class="mytel-extension-number" dir="ltr">{{extension}}</span><span class="mytel-extension-state">{{#if registered}}Online{{else}}Offline{{/if}}</span></div>
   <div class="mytel-extension-name">{{description}}</div>
   <div class="mytel-extension-activity">{{#each active}}<span class="monitor" {{bindAttr title="Channel"}}><span dir="ltr">{{remoteExten}}</span><time dir="ltr">{{formatSince}}</time></span>{{else}}<span class="mytel-idle-label">{{#if registered}}Available{{else}}Unregistered{{/if}}</span>{{/each}}</div>
   <div class="mytel-extension-tools"><span class="phone-icon" title="Drag the phone icon onto a destination to place a call">{{view App.DraggablePhoneIconView iconBinding="view.extensionIcon"}}</span>{{#if unreadMail}}<span class="mytel-mail" title="New voicemail">✉ {{NewMessages}}</span>{{/if}}<a class="pbxtooltip mytel-info" href="#" aria-label="Extension details"><span aria-hidden="true">i</span><div>{{channel}}<br>{{description}}{{#if registered}}<br><span dir="ltr">{{ip}}</span>{{/if}}</div></a></div>
@@ -117,13 +118,13 @@
 {/literal}
 </script>
 
-<script type="text/x-handlebars" data-template-name="iptrunk">{literal}<div class="mytel-resource"><span class="mytel-resource-icon" aria-hidden="true">⇄</span><div><strong dir="ltr">{{channel}}</strong><span>{{#if registered}}Connected{{else}}Unregistered{{/if}}</span>{{#each active}}<span class="monitor" dir="ltr">{{CallerIDNum}} · {{formatSince}}</span>{{/each}}</div></div>{/literal}</script>
+<script type="text/x-handlebars" data-template-name="iptrunk">{literal}<div class="mytel-resource mytel-iptrunk"><span class="mytel-resource-icon" aria-hidden="true">⇄</span><div><strong dir="ltr">{{channel}}</strong><span class="mytel-resource-state">{{#if registered}}Connected{{else}}Unregistered{{/if}}</span>{{#each active}}<span class="monitor" dir="ltr">{{CallerIDNum}} · {{formatSince}}</span>{{/each}}</div></div>{/literal}</script>
 <script type="text/x-handlebars" data-template-name="conference">{literal}<div class="mytel-resource"><span class="mytel-resource-icon" aria-hidden="true">♧</span><div><strong>{{extension}} · {{description}}</strong><span>{{callers.length}} participants {{#if callers}}· {{formatSince}}{{/if}}</span></div>{{view App.DroppableIconView icon="{/literal}modules/{$module_name}/images/conference.png{literal}"}}</div>{/literal}</script>
 <script type="text/x-handlebars" data-template-name="parkinglot">{literal}<div class="mytel-resource"><span class="mytel-resource-icon" aria-hidden="true">P</span><div><strong>Park {{extension}}</strong><span>{{#if shortchannel}}{{shortchannel}} · {{formatTimeout}}{{else}}Available{{/if}}</span></div>{{view App.DroppableIconView icon="{/literal}modules/{$module_name}/images/parking.png{literal}"}}</div>{/literal}</script>
 <script type="text/x-handlebars" data-template-name="dahdispan">{literal}<div class="mytel-resource"><span class="mytel-resource-icon" aria-hidden="true">⇄</span><div><strong dir="ltr">DAHDI/{{span}}</strong><span dir="ltr">{{formatChanRange}}</span></div></div>{/literal}</script>
 <script type="text/x-handlebars" data-template-name="editable-title">{literal}{{#if editing}}{{view Ember.TextField valueBinding="description"}}<button type="button" {{action "save" bubbles=false}}>Save</button>{{else}}<span>{{description}}</span><span class="mytel-group-count">{{length}}</span><button type="button" class="paneledittitle" {{action "edit" bubbles=false}}>Rename</button>{{/if}}{/literal}</script>
 </div>
 <script type="text/javascript">var arrLang_main = {$ARRLANG_MAIN}; var var_init = {$VAR_INIT};</script>
-<script src="modules/{$module_name}/themes/default/js/mytel-ui.js?v=2.0.0" defer></script>
-<script src="modules/{$module_name}/themes/default/js/mytel-call-model.js?v=2.0.0" defer></script>
-<script src="modules/{$module_name}/themes/default/js/mytel-calls.js?v=2.0.0" defer></script>
+<script src="modules/{$module_name}/themes/default/js/mytel-ui.js?v=2.0.1" defer></script>
+<script src="modules/{$module_name}/themes/default/js/mytel-call-model.js?v=2.0.1" defer></script>
+<script src="modules/{$module_name}/themes/default/js/mytel-calls.js?v=2.0.1" defer></script>

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.1 — 2026-11-18
+
+- Recognize idle PJSIP handsets with a registered contact when qualify is disabled.
+- Use green for registered extensions and connected trunks, and gray for offline or unconfirmed connections. Call activity stays visible separately.
+- Show incoming, outgoing, internal and unclassified calls in separate Live Calls filters with counts.
+- Keep Call parking collapsed when the workspace opens.
+
 ## 2.0.0 — 2026-11-18
 
 - Migrated the distribution to `mytel-one/MyTell-Operation-Issabel-Pannel` with token-free public installation.

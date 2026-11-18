@@ -141,7 +141,7 @@ class paloControlPanelStatus extends paloInterfaceSSE
         $response['snapshot'] = TRUE;
         $response['timestamp'] = time();
         require_once __DIR__ . '/mytelLiveSnapshot.php';
-        $live = mytelBuildLiveSnapshot($this->_liveChannels, $this->_internalState['phones'], $this->_internalState['queues'], $response['timestamp']);
+        $live = mytelBuildLiveSnapshot($this->_liveChannels, $this->_internalState['phones'], $this->_internalState['queues'], $response['timestamp'], $this->_internalState['iptrunks']);
         $response = array_merge($response, $live);
         // Reuse the same normalized own-channel records in the extension inspector.
         $byChannel = array();
@@ -618,13 +618,26 @@ class paloControlPanelStatus extends paloInterfaceSSE
         if (!isset($this->_internalState[$type][$channel])) return;
         $objinfo =& $this->_internalState[$type][$channel];
         $state = isset($params['DeviceState']) ? strtolower(str_replace(array(' ', '_', '+'), '', $params['DeviceState'])) : '';
-        $objinfo['registered'] = in_array($state, array('notinuse', 'inuse', 'busy', 'ringing', 'ringinuse', 'onhold'), TRUE);
-        $objinfo['ip'] = NULL;
-        // AMI Contacts contains AoR/sip:user@host:port entries, including IPv6.
-        if ($objinfo['registered'] && isset($params['Contacts']) &&
-            preg_match('/sips?:[^@,]*@(\[[^\]]+\]|[^:;,> ]+)/i', $params['Contacts'], $match)) {
-            $objinfo['ip'] = trim($match[1], '[]');
+        $stateReady = in_array($state, array('notinuse', 'inuse', 'busy', 'ringing', 'ringinuse', 'onhold'), TRUE);
+        $contacts = isset($params['Contacts']) && is_string($params['Contacts']) ? $params['Contacts'] : '';
+        $address = NULL;
+        // EndpointList's DeviceState is not a registration result: an idle
+        // NonQual contact can report Unavailable when qualify is disabled.
+        // Contacts are the current bindings. Static trunks retain their separate
+        // device/qualification evidence instead of treating configured URIs as online.
+        if (preg_match('/sips?:(?:[^@,;\s>]+@)?(\[[^\]]+\]|[^:;,> \/@]+)/i', $contacts, $match)) {
+            $candidate = trim($match[1], '[]');
+            if (!in_array(strtolower($candidate), array('0.0.0.0', '::', '-none-', 'unknown', '(unspecified)'), TRUE)) $address = $candidate;
         }
+        $objinfo['registered'] = $type === 'phones' && array_key_exists('Contacts', $params) ? !is_null($address) : $stateReady;
+        $objinfo['ip'] = $address;
+        $objinfo['device_state'] = $this->_filterUnknown($params, 'DeviceState');
+        $objinfo['registration_basis'] = $type === 'phones' && array_key_exists('Contacts', $params) ?
+            (!is_null($address) ? 'contact' : 'no-contact') : 'device-state';
+        $objinfo['transport'] = NULL;
+        if (preg_match('/;transport=(UDP|TCP|TLS|WS|WSS)(?:[;,> ]|$)/i', $contacts, $transport))
+            $objinfo['transport'] = strtoupper($transport[1]);
+        elseif (preg_match('/sips:/i', $contacts)) $objinfo['transport'] = 'TLS';
     }
 
     // Evento que contiene información sobre enumeración de SIPPeers, IAXpeerlist

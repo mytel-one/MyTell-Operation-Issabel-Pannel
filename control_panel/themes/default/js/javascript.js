@@ -1189,7 +1189,7 @@ $(document).ready(function() {
         deletePBXObject: function(obj) {
             if (obj.objtype === 'phones') {
                 var found = this.localizarControladorExtension('channel', obj.key);
-                if (found) { found[0].removeAt(found[1]); extensionCounts.totalExtensions--; }
+                if (found) { found[0].removeAt(found[1]); }
                 return;
             }
             var controller = this.get(obj.objtype);

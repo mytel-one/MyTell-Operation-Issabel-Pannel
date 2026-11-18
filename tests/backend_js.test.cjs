@@ -55,4 +55,15 @@ for (const variant of ['control_panel', 'control_panel_en']) {
     assert.equal(selection.selectedExtension, '100');
     assert.equal(selection.selectedContainer, card);
   });
+  test(`${variant}: deleting an extension requires no obsolete global counter`, () => {
+    const start = source.indexOf('        deletePBXObject: function(obj)');
+    const end = source.indexOf('// Mandar a actualizar', start);
+    const body = source.slice(start, end).replace('deletePBXObject:', '').trim().replace(/,$/, '');
+    const isolated = vm.createContext({});
+    const remove = vm.runInContext('(' + body + ')', isolated);
+    const removed = [];
+    const controller = {localizarControladorExtension: (key, value) => [{removeAt: index => removed.push(index)}, 3]};
+    assert.doesNotThrow(() => remove.call(controller, {objtype:'phones', key:'PJSIP/100'}));
+    assert.deepEqual(removed, [3]);
+  });
 }

@@ -99,3 +99,31 @@ test('queue membership matches exact endpoints and Local destinations without pr
     assert.equal(memberships[1].paused,false);
     assert.equal(model.queueMemberships([{extension:'601',memberRefresh:[{Interface:'Local/2010@from-queue/n'}]}],phone).length,0);
 });
+
+test('call direction uses explicit snapshot evidence and never guesses from caller numbers', () => {
+    const calls=model.collectCalls([],[
+        {id:'in',direction:'incoming',channels:[{...channel('one','abc123','uid-1'),direction:'incoming'}]},
+        {id:'out',direction:'outgoing',channels:[channel('two','def123','uid-2')]},
+        {id:'internal',direction:'internal',channels:[channel('three','ghi123','uid-3'),channel('four','ghi123','uid-4')]},
+        {id:'unknown',direction:null,channels:[{...channel('five','jkl123','uid-5'),CallerIDNum:'+12025550104'}]},
+        {id:'unsupported',direction:'inbound',channels:[channel('six','mno123','uid-6')]}
+    ]);
+    assert.deepEqual(model.directionTotals(calls),{all:5,incoming:1,outgoing:1,internal:1,unknown:2});
+    assert.equal(calls.find(call=>call.id==='unknown').direction,null);
+    assert.equal(calls.find(call=>call.id==='unsupported').direction,null);
+    assert.equal(calls.find(call=>call.id==='in').legs[0].direction,'incoming');
+    assert.equal(model.directionLabel(null),'Unknown');
+    assert.equal(model.directionLabel('outgoing'),'Outgoing');
+});
+
+test('direction filters combine with call status and search while preserving grouped call totals', () => {
+    const calls=model.collectCalls([],[
+        {id:'incoming',direction:'incoming',state:'Ringing',channels:[channel('one','abc123','uid-1','Ringing')],extensions:['201']},
+        {id:'outgoing',direction:'outgoing',channels:[channel('two','def123','uid-2')],extensions:['202']},
+        {id:'unknown',direction:null,channels:[channel('three','ghi123','uid-3')],extensions:['203']}
+    ]);
+    assert.deepEqual(model.filterCalls(calls,'201','ringing','incoming').map(call=>call.id),['incoming']);
+    assert.equal(model.filterCalls(calls,'','in-call','incoming').length,0);
+    assert.deepEqual(model.filterCalls(calls,'','all','unknown').map(call=>call.id),['unknown']);
+    assert.equal(model.filterCalls(calls,'','all','outgoing').length,1);
+});

@@ -27,6 +27,9 @@ phones[2]['active']=[live_leg('PJSIP/203-000000d','1700000000.104','1700000000.1
 phones[4]['active']=[live_leg('PJSIP/205-000000c','1700000000.103','1700000000.102','202','205',34,answered_age=20)]
 phones[4]['trunkstate']='Up'
 phones[7]['active']=[live_leg('PJSIP/208-000000e','1700000000.105','1700000000.105','+12025550106','208',360,held=True,answered_age=344)]
+for phone in phones:
+    for call in phone['active']:
+        call['direction']={'1700000000.100':'incoming','1700000000.102':'internal','1700000000.104':'incoming','1700000000.105':'outgoing'}.get(call['Linkedid'])
 cards = []
 for phone in phones:
     phone['channel'] = 'PJSIP/' + phone['extension']
@@ -47,6 +50,8 @@ sidebar = '''<aside class="mytel-side-column"><section class="mytel-surface myte
 start = desktop.index('<aside class="mytel-side-column"')
 end = desktop.index('</aside>', start) + len('</aside>')
 desktop = desktop[:start] + sidebar + desktop[end:]
+desktop=desktop.replace('<div class="pbxelement"><div class="mytel-resource"><span class="mytel-resource-icon">⇄</span><div><strong dir="ltr">PJSIP/asiatech</strong><span>متصل</span></div></div></div>','<div class="pbxelement mytel-iptrunk-card pbxactive"><div class="mytel-resource mytel-iptrunk"><span class="mytel-resource-icon">⇄</span><div><strong dir="ltr">PJSIP/example-trunk</strong><span class="mytel-resource-state">Connected</span></div></div></div><div class="pbxelement mytel-iptrunk-card"><div class="mytel-resource mytel-iptrunk"><span class="mytel-resource-icon">⇄</span><div><strong dir="ltr">PJSIP/example-backup</strong><span class="mytel-resource-state">Unregistered</span></div></div></div>')
+desktop=desktop.replace('<h3>پارک تماس</h3><div class="pbxelement"><div class="mytel-resource"><span class="mytel-resource-icon">P</span><div><strong>پارک ۷۰۱</strong><span>آزاد</span></div></div></div>','<details class="mytel-parking-collapse"><summary><span>Call parking</span><span class="mytel-parking-count">1 slot</span></summary><div class="parkinglots-list"><div class="pbxelement"><div class="mytel-resource"><span class="mytel-resource-icon">P</span><div><strong>Park 701</strong><span>Available</span></div><img class="icon" src="../control_panel/images/parking.png" alt="Call parking destination"></div></div></div></details>')
 desktop = desktop.replace('modules/control_panel/', '../control_panel/')
 desktop=desktop.replace('<div class="Queue-Container">','<div class="Queue-Container" data-idattr="QUEUE/600">').replace('<div class="Queue-Container-Agent-Client">','<div class="mytel-queue-summary" data-queue-metrics></div><p class="mytel-queue-period">Since last PBX statistics reset</p><div class="Queue-Container-Agent-Client">')
 script = '''
@@ -60,7 +65,7 @@ const queueData={extension:'600',description:'Customer care',Completed:27,Abando
 window.debug_root = {extensions: sourcePhones, queues:noData?[]:[queueData], connected:fixtureConnection==='connected', permissionDenied:fixtureConnection==='permission',connectionState:fixtureConnection, lastUpdatedAt:noData && fixtureMode!=='empty' ? 0 : Date.now()-(['disconnected','partial'].includes(fixtureMode)?30000:0), pbxStatus(){location.search='?state=connected';}};
 const rawChannels=phones.flatMap(phone=>phone.active.map(call=>({...call,local_extension:phone.extension})));
 rawChannels.push({Channel:'Local/600-test;1',Uniqueid:'1700000000.106',Linkedid:'1700000000.106',CallerIDNum:'+12025550107',CallerIDName:'Example queued caller',Since:Date.now()/1000-35,ChannelStateDesc:'Up',queue_ids:['600'],Application:'Queue',on_hold:null,answered_at:null,direction:null});
-const groups={};rawChannels.forEach(channel=>{const key='linked:'+channel.Linkedid;const item=groups[key]||(groups[key]={id:key,linkedid:channel.Linkedid,channels:[],extensions:[],queue_ids:[],state:channel.ChannelStateDesc,started_at:channel.Since,direction:null});item.channels.push(channel);if(channel.local_extension&&!item.extensions.includes(channel.local_extension))item.extensions.push(channel.local_extension);if(channel.queue_ids)item.queue_ids.push(...channel.queue_ids);if(channel.on_hold===true)item.state='On hold';if(item.queue_ids.length)item.state='Waiting';item.started_at=Math.min(item.started_at,channel.Since);});
+const groups={};rawChannels.forEach(channel=>{const key='linked:'+channel.Linkedid;const item=groups[key]||(groups[key]={id:key,linkedid:channel.Linkedid,channels:[],extensions:[],queue_ids:[],state:channel.ChannelStateDesc,started_at:channel.Since,direction:channel.direction || null});item.channels.push(channel);if(channel.local_extension&&!item.extensions.includes(channel.local_extension))item.extensions.push(channel.local_extension);if(channel.queue_ids)item.queue_ids.push(...channel.queue_ids);if(channel.on_hold===true)item.state='On hold';if(item.queue_ids.length)item.state='Waiting';item.started_at=Math.min(item.started_at,channel.Since);});
 debug_root.latestSnapshot={live_calls:noData?[]:Object.values(groups)};
 window.var_init={CSRF_TOKEN:'synthetic-fixture-only'};
 window.fixtureActionLog=[];

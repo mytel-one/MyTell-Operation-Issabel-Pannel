@@ -8,7 +8,11 @@ The dashboard requests complete PBX snapshots, with one request in flight at a t
 
 Extension cards show registration and current activity. An extension can have several simultaneous calls; open its details to inspect each one. Registration and activity are different: a device may have an active channel while its registration is no longer available.
 
+Green indicates a registered extension or connected trunk. Gray indicates an offline or unconfirmed connection. A valid PJSIP contact can stay registered while its handset is idle, even with qualify disabled.
+
 The active-call workspace groups channels only when Asterisk reports the same linked call ID. All observed channel legs remain available for inspection. Channels without a linked ID remain separate; matching caller numbers alone never proves they are the same call.
+
+Use the direction filters to switch between incoming, outgoing, internal and unclassified calls. The panel uses PBX direction and routing evidence when available. Calls with insufficient evidence appear under Unknown.
 
 Channel age and answered duration are separate measurements. An answered timer is shown only when Asterisk reports an answer timestamp. Direction, hold state and connected-party details are shown only when supplied by the PBX; unavailable fields are identified rather than guessed.
 
@@ -17,6 +21,8 @@ Channel age and answered duration are separate measurements. An answered timer i
 Queue information includes waiting callers, agent state and the statistics available from Asterisk. Answered and abandoned counters are **since the last PBX queue-statistics reset**, not necessarily today. A panel refresh does not reset queue counters.
 
 Trunks, conference participants and parking slots reflect the corresponding Asterisk state. The panel does not create extensions, queues or trunks: configure them in Issabel first.
+
+Expand **Call parking** to see the current slots. It starts closed and stays open while live updates arrive.
 
 ## Call controls
 

@@ -1,6 +1,7 @@
 <?php
 // MyTel modifications, 2026-11-18. Pure normalization of observed AMI data.
-function mytelBuildLiveSnapshot($channels, $phones, $queues, $timestamp)
+require_once __DIR__ . '/mytelCallDirection.php';
+function mytelBuildLiveSnapshot($channels, $phones, $queues, $timestamp, $trunks = array())
 {
     $unique = array();
     foreach ($channels as $channel) {
@@ -32,10 +33,14 @@ function mytelBuildLiveSnapshot($channels, $phones, $queues, $timestamp)
     foreach ($unique as $name => &$channel) {
         $endpoint = preg_replace('/-[[:xdigit:]]+(?:<ZOMBIE>|<MASQ>)*(?:;[0-9]+)?$/', '', $name);
         $channel['local_extension'] = isset($phones[$endpoint]['extension']) ? (string)$phones[$endpoint]['extension'] : NULL;
-        $channel['direction'] = NULL; // Current dialplan/caller ID does not prove call direction.
+        $channel['direction'] = NULL; // Unknown unless explicit metadata or observed origin evidence supports it.
+        $channel['direction_source'] = NULL;
         $channel['started_at'] = isset($channel['Since']) && is_numeric($channel['Since']) ? (int)$channel['Since'] : NULL;
         $channel['elapsed_seconds'] = is_null($channel['started_at']) ? NULL : max(0, (int)$timestamp - $channel['started_at']);
         $variables = isset($channel['Variables']) && is_array($channel['Variables']) ? $channel['Variables'] : array();
+        $directions = array('INBOUND'=>'incoming', 'OUTBOUND'=>'outgoing', 'INTERNAL'=>'internal');
+        $reported = isset($variables['DIRECTION']) && is_string($variables['DIRECTION']) ? strtoupper(trim($variables['DIRECTION'])) : '';
+        if (isset($directions[$reported])) { $channel['direction'] = $directions[$reported]; $channel['direction_source'] = 'dialplan:DIRECTION'; }
         $answer = isset($variables['CDR(answer,u)']) && is_numeric($variables['CDR(answer,u)']) ? (float)$variables['CDR(answer,u)'] : 0;
         $channel['answered_at'] = $answer > 0 && $answer <= $timestamp ? $answer : NULL;
         $channel['answered_seconds'] = is_null($channel['answered_at']) ? NULL : (int)floor($timestamp - $answer);
@@ -68,6 +73,15 @@ function mytelBuildLiveSnapshot($channels, $phones, $queues, $timestamp)
         $call['answered_seconds'] = is_null($call['answered_at']) ? NULL : (int)floor($timestamp - $call['answered_at']);
         $call['channel_count'] = count($call['channels']);
         if (count($call['queue_ids'])) $call['state'] = 'Waiting';
+        $call['direction'] = mytelClassifyCallDirection($call['channels'], $phones, $trunks);
+        foreach ($call['channels'] as &$leg) {
+            if (is_null($leg['direction']) && !is_null($call['direction'])) {
+                $leg['direction'] = $call['direction'];
+                $leg['direction_source'] = 'linked-call';
+            }
+            $unique[$leg['Channel']] = $leg;
+        }
+        unset($leg);
     }
     unset($call);
     return array('live_channels'=>array_values($unique), 'live_calls'=>array_values($calls));

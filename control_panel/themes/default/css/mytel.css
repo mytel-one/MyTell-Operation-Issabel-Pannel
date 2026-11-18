@@ -296,3 +296,50 @@
 #controlPanelApplication .mytel-summary-note{color:#80520d}
 /* Secondary labels retain readable contrast on light resource surfaces. */
 #controlPanelApplication .mytel-info,#controlPanelApplication .mytel-section-badge,#controlPanelApplication .Queue-Agents>span>strong,#controlPanelApplication .mytel-queue-callers h4,#controlPanelApplication .mytel-resource>div>span{color:#52677e}
+
+/* Registration is independent of call activity and call direction. */
+#controlPanelApplication .ExtensionStyle[data-registration=online]{background:#f0faf5;border-color:#cde8da;border-inline-start-color:#168b64}
+#controlPanelApplication .ExtensionStyle[data-registration=offline]{background:#f7f9fc;border-color:#dce3eb;border-inline-start-color:#8493a7}
+#controlPanelApplication .ExtensionStyle[data-registration=online] .mytel-extension-state{color:#146b47}
+#controlPanelApplication .ExtensionStyle[data-registration=online] .mytel-extension-state:before{background:#168b64}
+#controlPanelApplication .ExtensionStyle[data-registration=offline] .mytel-extension-state{color:#52677e}
+#controlPanelApplication .ExtensionStyle[data-registration=offline] .mytel-extension-state:before{background:#8493a7}
+#controlPanelApplication .mytel-metric .mytel-red{color:#52677e;background:#edf1f6;border-color:#d6dfe9}
+#controlPanelApplication .mytel-filters button[data-filter=online]{color:#146b47}
+#controlPanelApplication .mytel-filters button[data-filter=online][aria-pressed=true]{background:#eaf7ef;border-color:#b7dfc9}
+#controlPanelApplication .mytel-filters button[data-filter=offline]{color:#52677e}
+#controlPanelApplication .mytel-filters button[data-filter=offline][aria-pressed=true]{background:#edf1f6;border-color:#cbd6e2}
+#controlPanelApplication .mytel-iptrunk-card{background:#f7f9fc!important;border-color:#dce3eb!important;border-inline-start:3px solid #8493a7!important}
+#controlPanelApplication .mytel-iptrunk-card .mytel-resource-state{display:inline-flex;align-items:center;gap:5px;color:#52677e}
+#controlPanelApplication .mytel-iptrunk-card .mytel-resource-state:before{content:'';width:5px;height:5px;background:#8493a7;border-radius:50%}
+#controlPanelApplication .mytel-iptrunk-card .mytel-resource-icon{background:#edf1f6;border-color:#d6dfe9;color:#52677e}
+#controlPanelApplication .mytel-iptrunk-card.pbxactive{background:#f0faf5!important;border-color:#cde8da!important;border-inline-start-color:#168b64!important}
+#controlPanelApplication .mytel-iptrunk-card.pbxactive .mytel-resource-state{color:#146b47}
+#controlPanelApplication .mytel-iptrunk-card.pbxactive .mytel-resource-state:before{background:#168b64}
+#controlPanelApplication .mytel-iptrunk-card.pbxactive .mytel-resource-icon{background:#e8f6ef;border-color:#c6e6d6;color:#146b47}
+#controlPanelApplication .mytel-registration-value.online{color:#146b47;font-weight:600}
+#controlPanelApplication .mytel-registration-value.offline{color:#52677e}
+#controlPanelApplication .mytel-call-table{min-width:860px}
+#controlPanelApplication .mytel-direction-filters{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:0 18px 12px}
+#controlPanelApplication .mytel-direction-filters button{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:7px 12px;border:1px solid #dce5ef;border-radius:7px;background:#fff;color:#52677e;font-size:11px}
+#controlPanelApplication .mytel-direction-filters button>span{font:10px/1.5 Arial,sans-serif;min-width:12px;color:inherit}
+#controlPanelApplication .mytel-direction-filters button[aria-pressed=true]{background:#edf4fb;border-color:#bfd7eb;color:#284b6d}
+#controlPanelApplication .mytel-direction-filters [data-call-direction=incoming][aria-pressed=true]{background:#edf5ff;border-color:#c5dcf4;color:#175e9b}
+#controlPanelApplication .mytel-direction-filters [data-call-direction=outgoing][aria-pressed=true]{background:#fff7e8;border-color:#edd5a6;color:#80520d}
+#controlPanelApplication .mytel-direction-filters [data-call-direction=internal][aria-pressed=true]{background:#f4effd;border-color:#dfd0f0;color:#69418d}
+#controlPanelApplication .mytel-direction-filters [data-call-direction=unknown][aria-pressed=true]{background:#edf1f6;border-color:#cbd6e2;color:#52677e}
+#controlPanelApplication .mytel-call-direction{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border:1px solid #dbe3ed;border-radius:5px;background:#eef2f7;color:#52677e;font-size:10px;white-space:nowrap}
+#controlPanelApplication .mytel-call-direction.incoming{background:#edf5ff;border-color:#c5dcf4;color:#175e9b}
+#controlPanelApplication .mytel-call-direction.outgoing{background:#fff7e8;border-color:#edd5a6;color:#80520d}
+#controlPanelApplication .mytel-call-direction.internal{background:#f4effd;border-color:#dfd0f0;color:#69418d}
+#controlPanelApplication .mytel-call-direction.incoming:before{content:'↙'}
+#controlPanelApplication .mytel-call-direction.outgoing:before{content:'↗'}
+#controlPanelApplication .mytel-call-direction.internal:before{content:'↔'}
+#controlPanelApplication .mytel-call-direction-value.incoming{color:#175e9b}
+#controlPanelApplication .mytel-call-direction-value.outgoing{color:#80520d}
+#controlPanelApplication .mytel-call-direction-value.internal{color:#69418d}
+#controlPanelApplication .mytel-call-direction-value.unknown{color:#52677e}
+#controlPanelApplication .mytel-parking-collapse>summary{min-height:44px;padding:6px 0;cursor:pointer;color:#284b6d;font-size:11px;font-weight:600}
+#controlPanelApplication .mytel-parking-count{float:inline-end;color:#52677e;font-size:10px;font-weight:400}
+#controlPanelApplication .mytel-parking-collapse>.parkinglots-list{padding-top:6px}
+@media(max-width:650px){#controlPanelApplication .mytel-direction-filters{padding:0 12px 12px;gap:5px}#controlPanelApplication .mytel-direction-filters button{padding:7px 9px;font-size:10px;gap:5px}}

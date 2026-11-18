@@ -16,8 +16,8 @@ The preview contains synthetic test data. Live information comes from your own P
 
 ```bash
 curl -fL --retry 3 -o /root/mytel-operation-install.sh \
-  https://raw.githubusercontent.com/mytel-one/MyTell-Operation-Issabel-Pannel/v2.0.0/install.sh
-bash /root/mytel-operation-install.sh --ref v2.0.0 --lang en
+  https://raw.githubusercontent.com/mytel-one/MyTell-Operation-Issabel-Pannel/v2.0.1/install.sh
+bash /root/mytel-operation-install.sh --ref v2.0.1 --lang en
 ```
 
 سپس در ایزابل از منوی **PBX → MyTel Operation** وارد شوید؛ آدرس مستقیم:
@@ -33,7 +33,7 @@ https://YOUR-ISSABEL/index.php?menu=control_panel
 English is the default. To select the optional Persian RTL interface instead:
 
 ```bash
-bash /root/mytel-operation-install.sh --ref v2.0.0 --lang fa
+bash /root/mytel-operation-install.sh --ref v2.0.1 --lang fa
 ```
 
 For an extracted release or checkout, the installer resolves the package relative to its own location:
@@ -51,6 +51,7 @@ bash /path/to/MyTell-Operation-Issabel-Pannel/install.sh --lang en
 - نمایش داخلی‌ها، صف‌ها، ترانک‌ها، کنفرانس و پارکینگ تماس بر اساس تنظیمات واقعی PBX.
 - جست‌وجوی نام و شمارهٔ داخلی و فیلتر وضعیت.
 - فهرست تماس‌های جاری و جزئیات چند تماس هم‌زمانِ هر داخلی، بر اساس دادهٔ واقعی Asterisk.
+- تفکیک تماس‌های ورودی، خروجی و داخلی با فیلتر و شمارش مستقل.
 - نمایش جداگانهٔ زمان ایجاد کانال و مدت پاسخ‌گویی، همراه با مشخص‌کردن اطلاعات ناموجود.
 - فضای جزئیات داخلی، انتخاب داخلی اپراتور و کنترل‌های تماس احراز هویت‌شده.
 - وضعیت اتصال، زمان آخرین دریافت اطلاعات و تلاش مجدد پس از قطع ارتباط.
@@ -81,6 +82,8 @@ php tests/backend_regressions.php control_panel
 php tests/backend_regressions.php control_panel_en
 php tests/backend_live.php control_panel
 php tests/backend_live.php control_panel_en
+php tests/direction_regressions.php control_panel
+php tests/direction_regressions.php control_panel_en
 php tests/snapshot_startup.php control_panel
 php tests/snapshot_startup.php control_panel_en
 node --test tests/*.cjs

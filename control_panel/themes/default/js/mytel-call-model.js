@@ -19,6 +19,8 @@
         return value !== '' && value != null && Number.isFinite(Number(value)) ? Number(value) : null;
     }
     function validId(value) { return present(value) && String(value) !== '0' && /^[a-zA-Z0-9_.:-]{3,128}$/.test(String(value)); }
+    function normalizeDirection(value) { return ['incoming','outgoing','internal'].indexOf(value)!==-1?value:null; }
+    function directionLabel(value) { return {incoming:'Incoming',outgoing:'Outgoing',internal:'Internal'}[value] || 'Unknown'; }
     function normalizeLeg(input, extension) {
         var caller = get(input, 'CallerIDNum', null);
         var connected = get(input, 'ConnectedLineNum', null);
@@ -29,7 +31,7 @@
             connected: present(connected) ? String(connected) : null, connectedName: get(input, 'ConnectedLineName', null),
             state: get(input, 'ChannelStateDesc', null), started: number(get(input, 'Since', get(input, 'started_at', null))),
             answered: number(get(input, 'answered_at', null)), answeredSeconds: number(get(input, 'answered_seconds', null)),
-            hold: get(input, 'on_hold', null), direction: get(input, 'direction', null),
+            hold: get(input, 'on_hold', null), direction: normalizeDirection(get(input, 'direction', null)),
             bridge: get(input, 'BridgeID', null), context: get(input, 'Context', null),
             destination: get(input, 'Extension', null), application: get(input, 'Application', null),
             appData: get(input, 'AppData', null), dnid: get(input, 'DNID', null),
@@ -65,7 +67,7 @@
         if (call.started == null && started.length) call.started = Math.min.apply(null, started);
         call.caller = call.legs.map(function (leg) { return leg.caller; }).filter(present)[0] || null;
         call.connected = call.legs.map(function (leg) { return leg.connected; }).filter(present)[0] || null;
-        call.direction = present(call.direction) ? call.direction : null;
+        call.direction = normalizeDirection(call.direction);
         return call;
     }
     function collectCalls(phones, liveCalls) {
@@ -94,14 +96,20 @@
         var priority = {ringing:0,waiting:1,hold:2,'in-call':3,dialing:4,busy:5,'off-hook':6,'pre-ring':7,down:8,reported:9,unknown:10};
         return priority[a.state]-priority[b.state] || (a.started == null ? Infinity:a.started)-(b.started == null ? Infinity:b.started) || a.id.localeCompare(b.id);
     }
-    function filterCalls(calls, query, state) {
+    function filterCalls(calls, query, state, direction) {
         var normalize = global.MyTelUI ? global.MyTelUI.normalize : function (value) { return String(value).toLowerCase().trim(); };
         var search = normalize(query || '');
         return calls.filter(function (call) {
             var haystack = [call.id,call.caller,call.connected].concat(call.extensions,call.extensionNames || [],call.queueIds);
             call.legs.forEach(function (leg) { haystack.push(leg.channel,leg.callerName,leg.connectedName,leg.destination); });
-            return (!state || state==='all' || call.state===state) && normalize(haystack.join(' ')).indexOf(search)!==-1;
+            var directionMatches=!direction || direction==='all' || (direction==='unknown' ? call.direction==null : call.direction===direction);
+            return directionMatches && (!state || state==='all' || call.state===state) && normalize(haystack.join(' ')).indexOf(search)!==-1;
         }).sort(compareCalls);
+    }
+    function directionTotals(calls) {
+        var totals={all:calls.length,incoming:0,outgoing:0,internal:0,unknown:0};
+        calls.forEach(function(call){totals[normalizeDirection(call.direction) || 'unknown']++;});
+        return totals;
     }
     function duration(seconds) {
         var value = number(seconds);
@@ -145,7 +153,7 @@
         });
         return output;
     }
-    var api = {get:get,list:list,present:present,normalizeLeg:normalizeLeg,collectCalls:collectCalls,filterCalls:filterCalls,duration:duration,queueSummary:queueSummary,callbackPayload:callbackPayload,queueMemberships:queueMemberships};
+    var api = {get:get,list:list,present:present,normalizeLeg:normalizeLeg,collectCalls:collectCalls,filterCalls:filterCalls,duration:duration,queueSummary:queueSummary,callbackPayload:callbackPayload,queueMemberships:queueMemberships,normalizeDirection:normalizeDirection,directionLabel:directionLabel,directionTotals:directionTotals};
     if (typeof module!=='undefined' && module.exports) module.exports=api;
     else global.MyTelCallModel=api;
 }(typeof window!=='undefined'?window:globalThis));

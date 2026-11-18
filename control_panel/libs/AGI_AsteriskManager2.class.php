@@ -227,7 +227,7 @@ class AGI_AsteriskManager2 extends AGI_AsteriskManager
                         }
                         if ($sClave === 'Variable' && strpos($sValor, '=') !== FALSE) {
                             list($variable, $value) = explode('=', $sValor, 2);
-                            if (in_array($variable, array('CDR(answer,u)', 'CHANNEL(onhold)'), TRUE))
+                            if (in_array($variable, array('CDR(answer,u)', 'CHANNEL(onhold)', 'DIRECTION'), TRUE))
                                 $paquete['Variables'][$variable] = $value;
                         }
                         $paquete[$sClave] = $sValor;
@@ -472,7 +472,7 @@ class AGI_AsteriskManager2 extends AGI_AsteriskManager
         $parameters = array();
         if ($channel) $parameters['Channel'] = $channel;
         if ($actionid) $parameters['ActionID'] = $actionid;
-        $parameters['Variables'] = 'CDR(answer,u),CHANNEL(onhold)';
+        $parameters['Variables'] = 'CDR(answer,u),CHANNEL(onhold),DIRECTION';
         return $this->send_request('Status', $parameters);
     }
 
