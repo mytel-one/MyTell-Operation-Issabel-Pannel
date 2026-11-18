@@ -1,0 +1,85 @@
+<?php
+/*
+  English language file — en.lang
+  For the Control Panel module (Issabel Call Monitoring)
+  MyTel build: full English (LTR) mapping, identity values.
+*/
+
+global $arrLangModule;
+$arrLangModule = array(
+
+    // Module main title
+    "Control Panel"                 => "Control Panel",
+
+    // Section titles
+    "Extensions"                    => "Extensions",
+    "Queues"                        => "Queues",
+    "Conferences"                   => "Conferences",
+    "Parking lots"                  => "Parking lots",
+    "SIP/IAX Trunks"                => "SIP/IAX Trunks",
+
+    // Queue texts
+    "Answered:"                     => "Answered:",
+    "Abandoned:"                    => "Abandoned:",
+    "Customers in Queue:"           => "Customers in Queue:",
+    "Agents"                        => "Agents",
+
+    // Extension and trunk states
+    "In use"                        => "In use",
+    "Idle"                          => "Idle",
+    "Ringing"                       => "Ringing",
+    "On Hold"                       => "On Hold",
+    "Unavailable"                   => "Unavailable",
+    "Not Registered"                => "Not Registered",
+    "Registered"                    => "Registered",
+
+    // Parking
+    "Parked call"                   => "Parked call",
+
+    // Area titles
+    "Area 1 - 0 ext"                => "Area 1",
+    "Area 2 - 0 ext"                => "Area 2",
+    "Edit Name"                     => "Edit Name",
+
+    // Other general texts
+    "Name"                          => "Name",
+    "New"                           => "New",
+    "Old"                           => "Old",
+    "Participants"                  => "Participants",
+    "Participant"                   => "Participant",
+    "Members"                       => "Members",
+    "Callers"                       => "Callers",
+    "No Callers"                    => "No Callers",
+    "Participant(s)"                => "Participant(s)",
+    "Parked"                        => "Parked",
+
+    // Error and status messages
+    "Error when connecting to Asterisk Manager" => "Error when connecting to Asterisk Manager",
+    "Loading"                       => "Loading",
+    "Invalid or missing parameters" => "Invalid or missing parameters",
+    "Hide All"                      => "Hide All",
+    "Show All"                      => "Show All",
+
+    // Panel variables (area names)
+    "AREA_DESCR_EXTENSION"          => "Extensions",
+    "AREA_DESCR_TRUNKS"             => "DAHDI Trunks",
+    "AREA_DESCR_TRUNKSSIP"          => "VoIP Trunks",
+    "AREA_DESCR_QUEUES"             => "Queues",
+    "AREA_DESCR_CONFERENCE"         => "Conferences",
+    "AREA_DESCR_PARKING"            => "Parking Lots",
+
+    // Template labels
+    "LBL_EXT_CALLS"                 => "Extension Calls",
+    "LBL_EXT_NO_CALLS"              => "No Calls",
+    "LBL_TRUNK_CHANNELS"            => "Trunk Channels",
+    "LBL_TRUNK_CALLS"               => "Trunk Calls",
+    "LBL_QUEUE_AGENTS"              => "Queue Agents",
+    "LBL_QUEUE_NO_AGENTS"           => "No Agents",
+    "LBL_QUEUE_CALLERS"             => "Callers in Queue",
+    "LBL_QUEUE_NO_CALLERS"          => "No Callers in Queue",
+    "LBL_CONF_PARTICIPANTS"         => "Participants",
+    "LBL_PARKED"                    => "Parked",
+    "LBL_SAVE_NAME"                 => "Save",
+    "LBL_EDIT_NAME"                 => "Edit Name",
+
+);

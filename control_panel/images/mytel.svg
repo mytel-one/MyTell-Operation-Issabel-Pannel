@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="72" viewBox="0 0 300 72" role="img" aria-label="mytel.one">
+  <defs>
+    <linearGradient id="mgrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="64" height="64" rx="16" fill="url(#mgrad)"/>
+  <circle cx="36" cy="46" r="4.5" fill="#ffffff"/>
+  <path d="M 26 36 A 14 14 0 0 1 46 36" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M 19 29 A 24 24 0 0 1 53 29" stroke="#ffffff" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.75"/>
+  <text x="82" y="47" font-family="Segoe UI, Tahoma, Arial, sans-serif" font-size="34" font-weight="700" fill="#0f172a">mytel<tspan fill="#0d9488">.one</tspan></text>
+</svg>

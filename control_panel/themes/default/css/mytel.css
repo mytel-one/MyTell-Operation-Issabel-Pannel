@@ -1,0 +1,298 @@
+/* MyTel.one white / blue / amber. All rules are confined to this module. */
+@font-face{font-family:MyTelVazirmatn;src:url('../fonts/Vazirmatn-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:MyTelEstedad;src:url('../fonts/Estedad-VF.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+#controlPanelApplication{--mt-bg:#f3f6fb;--mt-surface:#ffffff;--mt-border:#dce5ef;--mt-text:#172b43;--mt-muted:#5d7188;--mt-blue:#1674c5;--mt-amber:#ef9d28;--mt-green:#168b64;--mt-red:#c64e63;background:var(--mt-bg);color:var(--mt-text);font:14px/1.8 MyTelVazirmatn,Tahoma,Arial,sans-serif;border-radius:16px;isolation:isolate;min-width:0;overflow:hidden;text-align:start;direction:rtl;color-scheme:light}
+#controlPanelApplication[data-language=en]{direction:ltr}
+#controlPanelApplication *,#controlPanelApplication *:before,#controlPanelApplication *:after{box-sizing:border-box}
+#controlPanelApplication :is(div,span,p,a,li,dt,dd,input,button,label,h1,h2,h3,h4,time){font-family:inherit;text-align:start;direction:inherit}
+#controlPanelApplication [dir=ltr]{direction:ltr;unicode-bidi:isolate;text-align:start}
+#controlPanelApplication [hidden]{display:none!important}
+#controlPanelApplication a{color:var(--mt-blue);text-decoration:none}
+#controlPanelApplication button,#controlPanelApplication input{font:inherit}
+#controlPanelApplication button{cursor:pointer}
+#controlPanelApplication button:disabled{cursor:wait;opacity:.55}
+#controlPanelApplication :is(button,a,input,[tabindex]):focus-visible{outline:2px solid #c07917;outline-offset:3px}
+#controlPanelApplication :is(h1,h2,h3,h4){font-family:MyTelEstedad,MyTelVazirmatn,Tahoma,sans-serif;color:var(--mt-text);letter-spacing:0}
+#controlPanelApplication .containerAll{margin:0;padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
+#controlPanelApplication .mytel-header{min-height:76px;padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--mt-border);background:#ffffff}
+#controlPanelApplication .mytel-brand{display:flex;align-items:center;gap:11px;color:#fff;white-space:nowrap;flex-wrap:wrap;min-width:0}
+#controlPanelApplication .mytel-brand img{display:block;object-fit:contain;width:61px;height:30px}
+#controlPanelApplication .mytel-wordmark{font-family:Arial,sans-serif;font-weight:800;font-size:28px;letter-spacing:-1px;line-height:1.2;color:#fff}
+#controlPanelApplication .mytel-wordmark>span{font-family:inherit;color:var(--mt-amber)}
+#controlPanelApplication .mytel-product-label{font-family:Arial,sans-serif;font-size:10px;letter-spacing:1.3px;color:var(--mt-muted);border-inline-start:1px solid var(--mt-border);padding-inline-start:15px;margin-inline-start:6px;direction:ltr}
+#controlPanelApplication .mytel-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+#controlPanelApplication .mytel-connection{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:5px 11px;border:1px solid #e9d6b7;border-radius:7px;font-size:11px;color:#96641d;background:#fff6e7;white-space:nowrap}
+#controlPanelApplication .mytel-status-dot,#controlPanelApplication .mytel-live-dot{display:inline-block;width:6px;height:6px;background:currentColor;border-radius:50%;flex-shrink:0}
+#controlPanelApplication .mytel-connection[data-connection=connected]{border-color:#c5e8d5;background:#eaf7ef;color:var(--mt-green)}
+#controlPanelApplication .mytel-connection[data-connection=disconnected],#controlPanelApplication .mytel-connection[data-connection=permission]{border-color:#efcbd4;background:#fcecf0;color:var(--mt-red)}
+#controlPanelApplication .mytel-icon-button{display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:#f6f9fc;color:var(--mt-blue);border:1px solid var(--mt-border);border-radius:8px}
+#controlPanelApplication .mytel-icon-button>span{font:26px/1 Arial,sans-serif}
+#controlPanelApplication .mytel-page-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:28px 28px 22px}
+#controlPanelApplication .mytel-eyebrow{margin:0 0 3px;color:var(--mt-amber);font-size:11px;font-weight:600}
+#controlPanelApplication h1{font-size:27px;font-weight:750;line-height:1.6;margin:0 0 3px}
+#controlPanelApplication .mytel-description{font-size:12px;color:var(--mt-muted);margin:0}
+#controlPanelApplication .mytel-update{display:flex;align-items:center;gap:7px;flex-shrink:0;font-size:10px;color:var(--mt-muted);padding-bottom:4px}
+#controlPanelApplication .mytel-live-dot{color:var(--mt-green)}
+#controlPanelApplication[data-state=disconnected] .mytel-live-dot,#controlPanelApplication[data-state=permission] .mytel-live-dot{color:var(--mt-red)}
+#controlPanelApplication .mytel-banner{margin:0 28px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;border:1px solid #edd8ac;background:#fffaef;border-radius:10px;color:#805715;font-size:12px}
+#controlPanelApplication .mytel-banner button{flex-shrink:0;background:transparent;border:1px solid #d5a253;border-radius:6px;color:#805715;min-height:36px;padding:3px 10px}
+#controlPanelApplication .mytel-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:0 28px 24px}
+#controlPanelApplication .mytel-metric{display:grid;grid-template-columns:40px minmax(0,1fr);align-items:center;gap:0 13px;padding:18px 16px;border:1px solid var(--mt-border);border-radius:12px;background:linear-gradient(135deg,#ffffff,#fcfdff);min-width:0}
+#controlPanelApplication .mytel-metric-icon{width:39px;height:39px;border-radius:10px;display:flex;align-items:center;justify-content:center;font:25px/1 Arial,sans-serif;background:#eaf4ff;border:1px solid #cfe4f7}
+#controlPanelApplication .mytel-green{color:var(--mt-green);background:#e8f6ef;border-color:#c6e6d6}
+#controlPanelApplication .mytel-blue{color:var(--mt-blue)}
+#controlPanelApplication .mytel-amber{color:#a4670c;background:#fff5e3;border-color:#f0dfbf}
+#controlPanelApplication .mytel-red{color:var(--mt-red);background:#fcecf0;border-color:#efd1d9}
+#controlPanelApplication .mytel-metric-label{display:block;font-size:11px;color:#5b738c}
+#controlPanelApplication .mytel-metric strong{font-family:MyTelEstedad,sans-serif;display:block;font-size:29px;line-height:1.35;font-weight:700;font-variant-numeric:tabular-nums;color:var(--mt-text)}
+#controlPanelApplication .mytel-metric-caption{grid-column:2;font-size:10px;color:#667d93;margin-top:4px}
+#controlPanelApplication .mytel-workspace-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:20px;align-items:start;padding:0 28px 26px}
+#controlPanelApplication .mytel-surface{border:1px solid var(--mt-border);background:var(--mt-surface);border-radius:13px;min-width:0;overflow:hidden}
+#controlPanelApplication .mytel-section-heading{padding:18px 19px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e5ebf2}
+#controlPanelApplication .mytel-section-heading h2{font-size:16px;font-weight:700;margin:0 0 2px}
+#controlPanelApplication .mytel-section-heading p{color:var(--mt-muted);font-size:10px;margin:0}
+#controlPanelApplication .mytel-section-badge{font-family:Arial,sans-serif;font-size:9px;letter-spacing:1px;color:#5f7994;background:#f1f6fb;border:1px solid #d7e4f1;border-radius:5px;padding:3px 7px;flex-shrink:0}
+#controlPanelApplication .mytel-directory-toolbar{display:flex;gap:9px;padding:16px 18px 12px}
+#controlPanelApplication .mytel-search{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:0 12px;min-height:44px;border:1px solid #d7e2ed;background:#f8fafc;border-radius:8px;color:#667f96}
+#controlPanelApplication .mytel-search>span[aria-hidden]{font:25px/1 Arial,sans-serif;direction:ltr}
+#controlPanelApplication .mytel-search input{background:transparent;border:0;box-shadow:none!important;color:var(--mt-text);width:100%;min-width:0;margin:0;padding:9px 0;font-size:12px;border-radius:0;height:auto}
+#controlPanelApplication .mytel-search input::placeholder{color:#6d8298;opacity:1}
+#controlPanelApplication .mytel-secondary-button{min-height:44px;padding:7px 12px;border:1px solid #d7e2ed;background:#f2f6fb;color:#456984;font-size:11px;border-radius:8px}
+#controlPanelApplication .mytel-secondary-button[aria-pressed=true]{color:#805715;border-color:#d5a253;background:#fff5e3}
+#controlPanelApplication .mytel-filters{display:flex;align-items:center;gap:6px;padding:0 18px 14px;flex-wrap:wrap}
+#controlPanelApplication .mytel-filters button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:7px 10px;min-height:36px;border:1px solid transparent;border-radius:7px;background:transparent;color:#5d768f;font-size:11px;white-space:nowrap}
+#controlPanelApplication .mytel-filters button[aria-pressed=true]{border-color:#e4ba75;background:#fff3de;color:#89590f}
+#controlPanelApplication .mytel-filters button>span{display:inline-block;min-width:15px;font:10px/1.5 Arial,sans-serif;direction:ltr;color:inherit}
+#controlPanelApplication .mytel-directory-panels{padding:0 14px 12px;min-height:230px}
+#controlPanelApplication .lisortable{padding:0;margin:0;list-style:none;min-width:0}
+#controlPanelApplication .pbxpanel{padding:0;margin:0;list-style:none;width:auto!important;min-width:0!important;height:auto!important;min-height:0!important;color:var(--mt-text);background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
+#controlPanelApplication .pbxpanel>.ui-resizable-handle{display:none!important}
+#controlPanelApplication .mytel-extension-panel{margin-top:8px}
+#controlPanelApplication .mytel-extension-panel>dt{display:flex;align-items:center;gap:8px;background:#f1f5fa;border:0;border-block:1px solid #dce6f0;border-radius:4px;padding:7px 9px;font-size:11px;color:#496981;margin:0 4px 8px;min-height:35px}
+#controlPanelApplication .mytel-default-panel>.mytel-group-title{display:none}
+#controlPanelApplication .pbxpanel>dd{margin:0;padding:0;display:block!important}
+#controlPanelApplication .mytel-group-count{color:#698198;font:10px/1.4 Arial,sans-serif}
+#controlPanelApplication .paneledittitle{margin-inline-start:auto;float:none;min-height:28px;border:0;border-radius:4px;background:transparent;color:var(--mt-blue);font-size:10px;padding:0 4px}
+#controlPanelApplication .mytel-extension-panel>dt input{min-width:0;flex:1;border:1px solid var(--mt-border);padding:5px;background:#03101e;color:var(--mt-text);border-radius:4px}
+#controlPanelApplication .mytel-extension-panel>dt>button:not(.paneledittitle){border:1px solid #d5a253;background:var(--mt-amber);color:#03101e;border-radius:5px;padding:5px 9px;font-size:11px}
+#controlPanelApplication .Extensions-List{max-height:none;overflow:visible;padding:0 4px;line-height:inherit}
+#controlPanelApplication .sortablepanelview{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:9px;min-height:0}
+#controlPanelApplication .pbxelement{position:relative;display:block;width:auto;height:auto;min-width:0;padding:0;margin:0;border:1px solid #dce5ef;background:#fbfcfe;box-shadow:none;border-radius:9px;color:var(--mt-text);font-size:12px;transition:border-color .15s,background .15s;overflow:visible}
+#controlPanelApplication .pbxelement:hover{transform:none;background:#f0f6fc;border-color:#88b5dc;box-shadow:none;z-index:3}
+#controlPanelApplication .ExtensionStyle{min-height:115px;cursor:pointer;border-inline-start:3px solid #a5b3c3}
+#controlPanelApplication .ExtensionStyle.pbxactive{background:#f0faf5;border-color:#cde8da;border-inline-start-color:var(--mt-green)}
+#controlPanelApplication .ExtensionStyle[data-phone-state=busy]{background:#eef6ff;border-color:#c7def3;border-inline-start-color:var(--mt-blue)}
+#controlPanelApplication .ExtensionStyle[data-phone-state=ringing]{background:#fffaee;border-color:#eddaa8;border-inline-start-color:var(--mt-amber)}
+#controlPanelApplication .ExtensionStyle[aria-pressed=true]{outline:2px solid var(--mt-amber);outline-offset:1px}
+#controlPanelApplication .mytel-extension-body{padding:11px 12px 9px;position:relative;min-height:111px;min-width:0}
+#controlPanelApplication .mytel-extension-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#controlPanelApplication .mytel-extension-number{font-family:MyTelEstedad,Arial,sans-serif;font-size:19px;font-weight:700;line-height:1.4;color:#152c45;letter-spacing:.5px}
+#controlPanelApplication .mytel-extension-state{display:inline-flex;align-items:center;gap:5px;color:#6b7c8f;font-size:9px}
+#controlPanelApplication .mytel-extension-state:before{content:'';width:5px;height:5px;background:#8493a7;border-radius:50%;flex-shrink:0}
+#controlPanelApplication .pbxactive .mytel-extension-state{color:#18764f}
+#controlPanelApplication .pbxactive .mytel-extension-state:before{background:var(--mt-green)}
+#controlPanelApplication [data-phone-state=busy] .mytel-extension-state{color:#126aaa}
+#controlPanelApplication [data-phone-state=busy] .mytel-extension-state:before{background:var(--mt-blue)}
+#controlPanelApplication [data-phone-state=ringing] .mytel-extension-state{color:#946218}
+#controlPanelApplication [data-phone-state=ringing] .mytel-extension-state:before{background:var(--mt-amber)}
+#controlPanelApplication .mytel-extension-name{display:block;color:#344e67;font-size:12px;line-height:1.7;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#controlPanelApplication .mytel-extension-activity{padding-top:8px;padding-inline-end:65px;min-height:28px;color:#657b90;font-size:10px}
+#controlPanelApplication .mytel-extension-activity .monitor{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#1a6cad;font-size:10px;line-height:1.6;font-variant-numeric:tabular-nums}
+#controlPanelApplication .mytel-idle-label{color:#6f8499;font-size:9px}
+#controlPanelApplication .mytel-extension-tools{display:flex;align-items:center;gap:7px;position:absolute;inset-inline-end:10px;bottom:8px;min-height:25px}
+#controlPanelApplication .phone-icon{display:inline-flex;align-items:center;margin:0;padding:0;float:none}
+#controlPanelApplication .phone-icon img{width:23px;height:23px;object-fit:contain;padding:0;border:0;cursor:grab}
+#controlPanelApplication .mytel-mail{font-size:10px;color:#a56c15}
+#controlPanelApplication a.pbxtooltip{position:relative;text-decoration:none}
+#controlPanelApplication .mytel-info{display:flex;align-items:center;justify-content:center;color:#5f7c96;min-width:19px;min-height:24px;font:12px/1 Arial,sans-serif}
+#controlPanelApplication .mytel-info>span{display:flex;align-items:center;justify-content:center;width:14px;height:14px;border:1px solid #a9bfd2;border-radius:50%;font:10px/1 Arial,sans-serif;direction:ltr}
+#controlPanelApplication a.pbxtooltip>div{display:none;position:absolute;top:28px;inset-inline-end:0;inset-inline-start:auto;min-width:180px;max-width:250px;padding:10px;border:1px solid #c9dbea;border-radius:8px;background:#ffffff;color:#29445f;font-size:11px;white-space:normal;overflow-wrap:anywhere;z-index:100;box-shadow:0 8px 25px #1b3a5c24}
+#controlPanelApplication a.pbxtooltip:hover>div,#controlPanelApplication a.pbxtooltip:focus>div{display:block}
+#controlPanelApplication .mytel-directory-feedback{margin:0 18px 12px;padding:23px 15px;border:1px dashed #d6e2ee;border-radius:8px;text-align:center;color:var(--mt-muted);font-size:12px}
+#controlPanelApplication .mytel-directory-bottom{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 18px;background:#f7f9fc;border-top:1px solid #e5ebf2;color:#61798f;font-size:9px}
+#controlPanelApplication .mytel-directory-bottom>span:first-child{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+#controlPanelApplication .mytel-legend-dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-inline-start:8px;background:#8493a7}
+#controlPanelApplication .mytel-legend-dot:first-child{margin-inline-start:0}
+#controlPanelApplication .mytel-legend-dot.available{background:var(--mt-green)}
+#controlPanelApplication .mytel-legend-dot.busy{background:var(--mt-blue)}
+#controlPanelApplication .mytel-legend-dot.ringing{background:var(--mt-amber)}
+#controlPanelApplication .mytel-side-column{display:grid;gap:18px;min-width:0}
+#controlPanelApplication .mytel-resource-panel{padding:12px 15px}
+#controlPanelApplication .mytel-resource-panel:empty{padding:0}
+#controlPanelApplication .mytel-resource-panel h3{font-size:11px;color:#456882;font-weight:600;margin:0 0 9px}
+#controlPanelApplication .QueueView-large{border:0!important;background:transparent!important;padding:0!important;margin:0 0 14px!important;width:100%;height:auto;box-shadow:none}
+#controlPanelApplication .QueueView-large:last-child{margin-bottom:0!important}
+#controlPanelApplication .Queue-Container{background:#ffffff;border:1px solid #d5e2ee;border-radius:9px;overflow:hidden;box-shadow:none;margin:0}
+#controlPanelApplication .mytel-queue-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-bottom:1px solid #dce7f1;background:#edf4fb}
+#controlPanelApplication .mytel-queue-heading>div{display:flex;align-items:center;gap:9px;min-width:0}
+#controlPanelApplication .mytel-queue-heading strong{font-size:12px;font-weight:500;white-space:normal;overflow-wrap:anywhere}
+#controlPanelApplication .mytel-queue-number{font:700 12px/1.5 Arial,sans-serif;color:#176eac;background:#ffffff;border:1px solid #c6ddf2;border-radius:5px;padding:3px 6px}
+#controlPanelApplication .mytel-waiting-badge{font-size:9px;color:#906018;white-space:nowrap}
+#controlPanelApplication .queueParameters{padding:9px 12px;background:#f7f9fc;border-bottom:1px solid #e0e9f2;font-size:10px;color:#57728b}
+#controlPanelApplication .queueParameters>div{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#controlPanelApplication .queueParameters .answered{color:#16734f;margin:0!important}
+#controlPanelApplication .queueParameters .abandoned{color:#a9384d;margin-inline-start:14px}
+#controlPanelApplication .queueParameters strong{font-weight:400}
+#controlPanelApplication .Queue-Container-Agent-Client{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);max-height:260px;overflow:auto;padding:0;border:0;background:transparent;scrollbar-width:thin;scrollbar-color:#b8cadc #f7f9fc}
+#controlPanelApplication .Queue-Agents{width:auto;padding:11px 12px;min-width:0;font-size:10px;background:transparent;border-inline-end:1px solid #e0e9f2}
+#controlPanelApplication .Queue-Agents>span>strong{color:#5f7b94;font-size:10px;font-weight:400}
+#controlPanelApplication .Queue-Agents>br{display:none}
+#controlPanelApplication .agent-container{display:flex;align-items:center;gap:5px;margin:5px 0 0;padding:3px 0;line-height:1.7;min-width:0;color:#49667e;overflow-wrap:anywhere;white-space:normal}
+#controlPanelApplication .agent-container>br{display:none}
+#controlPanelApplication .circle{width:6px;height:6px;min-width:6px;display:inline-block;border:0;border-radius:50%;margin:0;flex-shrink:0}
+#controlPanelApplication .circle.green{background:var(--mt-green)}
+#controlPanelApplication .circle.orange,#controlPanelApplication .circle.yellow{background:var(--mt-amber)}
+#controlPanelApplication .circle.strong-red,#controlPanelApplication .circle.red{background:var(--mt-red)}
+#controlPanelApplication .circle.unknown{background:#8493a7}
+#controlPanelApplication .agent-info{display:inline-flex;align-items:center;gap:4px;min-width:0}
+#controlPanelApplication .agent-info img{max-width:14px;max-height:14px}
+#controlPanelApplication .mytel-queue-callers{padding:11px 10px;min-width:0}
+#controlPanelApplication .mytel-queue-callers h4{font-family:inherit;font-size:10px;font-weight:400;color:#5f7b94;margin:0 0 7px}
+#controlPanelApplication .mytel-caller{display:flex;align-items:center;gap:7px;color:#945a0e;background:#fff7e6;border:1px solid #f1dab3;padding:5px 7px;margin:5px 0;border-radius:5px;font-size:10px;overflow-wrap:anywhere;white-space:normal}
+#controlPanelApplication .mytel-empty{font-size:11px;color:#667e95;padding:20px 8px;margin:0;text-align:center;white-space:normal}
+#controlPanelApplication .mytel-empty-small{font-size:10px;padding:9px 0;text-align:start}
+#controlPanelApplication .mytel-resources .mytel-resource-panel{padding-top:10px;padding-bottom:11px;border-bottom:1px solid #e5ebf2}
+#controlPanelApplication .mytel-resources .mytel-resource-panel:last-child{border:0}
+#controlPanelApplication .mytel-resources .pbxelement{background:#f8fbff;border:1px solid #d7e4f1;padding:8px;margin:7px 0;border-radius:7px}
+#controlPanelApplication .mytel-resource{display:flex;align-items:center;gap:9px;white-space:normal}
+#controlPanelApplication .mytel-resource>div{flex:1;min-width:0}
+#controlPanelApplication .mytel-resource strong{display:block;font-size:11px;font-weight:500;color:#294b67;overflow-wrap:anywhere}
+#controlPanelApplication .mytel-resource>div>span{display:block;color:#647f98;font-size:9px}
+#controlPanelApplication .mytel-resource-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:28px;height:28px;border-radius:6px;background:#eaf4ff;color:#196fae;border:1px solid #ccdfef;font:16px/1 Arial,sans-serif;direction:ltr}
+#controlPanelApplication .mytel-resource>img{max-width:23px;max-height:23px;object-fit:contain;cursor:grab}
+#controlPanelApplication .ConferenceView-large,#controlPanelApplication .ParkinglotView-large{width:auto;min-height:0}
+#controlPanelApplication .parkinglots-list{max-height:220px;padding:0;scrollbar-color:#b8cadc #f7f9fc}
+#controlPanelApplication .mytel-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:13px 28px;border-top:1px solid #e4ebf3;color:#647b91;font:10px/1.7 Arial,sans-serif;background:#ffffff;direction:ltr}
+#controlPanelApplication .mytel-footer a{display:inline-flex;gap:7px;background:transparent;border:0;border-radius:0;box-shadow:none;padding:0;color:#526e86;transform:none;font-size:11px}
+#controlPanelApplication .mytel-footer a>span{color:var(--mt-amber)}
+#controlPanelApplication .mytel-visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(min-width:1600px){#controlPanelApplication .mytel-workspace-grid{grid-template-columns:minmax(0,1.85fr) minmax(350px,1fr)}}
+@media(max-width:1050px){#controlPanelApplication .mytel-workspace-grid{grid-template-columns:minmax(0,1fr)}#controlPanelApplication .mytel-side-column{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#controlPanelApplication .mytel-product-label{display:none}#controlPanelApplication .mytel-metric{padding:14px 12px;grid-template-columns:31px minmax(0,1fr);gap:0 9px}#controlPanelApplication .mytel-metric-icon{width:31px;height:34px;font-size:22px}#controlPanelApplication .mytel-metric-label{font-size:10px}}
+@media(max-width:650px){#controlPanelApplication{border-radius:12px}#controlPanelApplication .mytel-header{padding:13px 16px;min-height:66px;gap:9px}#controlPanelApplication .mytel-brand{gap:7px}#controlPanelApplication .mytel-brand img{width:44px;height:24px}#controlPanelApplication .mytel-wordmark{font-size:22px}#controlPanelApplication .mytel-connection{font-size:9px;gap:5px;padding:4px 7px;min-height:32px}#controlPanelApplication .mytel-header-actions{gap:6px}#controlPanelApplication .mytel-icon-button{width:32px;height:32px}#controlPanelApplication .mytel-page-heading{display:block;padding:20px 16px 18px}#controlPanelApplication h1{font-size:23px}#controlPanelApplication .mytel-description{font-size:11px}#controlPanelApplication .mytel-update{margin-top:12px;padding:0;font-size:9px}#controlPanelApplication .mytel-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:0 16px 18px}#controlPanelApplication .mytel-metric{padding:12px;gap:0 9px}#controlPanelApplication .mytel-metric strong{font-size:25px}#controlPanelApplication .mytel-metric-caption{font-size:9px}#controlPanelApplication .mytel-workspace-grid{padding:0 12px 20px;gap:15px}#controlPanelApplication .mytel-side-column{grid-template-columns:minmax(0,1fr)}#controlPanelApplication .mytel-section-heading{padding:14px}#controlPanelApplication .mytel-directory-toolbar{padding:12px 12px 10px;gap:6px}#controlPanelApplication .mytel-secondary-button{padding:6px 9px;font-size:10px}#controlPanelApplication .mytel-search{padding:0 9px}#controlPanelApplication .mytel-search input{font-size:11px}#controlPanelApplication .mytel-filters{padding:0 12px 12px;gap:3px}#controlPanelApplication .mytel-filters button{padding:7px;font-size:10px;gap:5px;min-height:40px}#controlPanelApplication .mytel-directory-panels{padding:0 8px 12px;min-height:160px}#controlPanelApplication .sortablepanelview{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}#controlPanelApplication .mytel-extension-body{padding:10px 9px 9px;min-height:119px}#controlPanelApplication .mytel-extension-number{font-size:17px}#controlPanelApplication .mytel-extension-state{font-size:8px;gap:4px}#controlPanelApplication .mytel-extension-name{font-size:10px}#controlPanelApplication .mytel-extension-activity{padding-inline-end:0;padding-top:5px;padding-bottom:22px}#controlPanelApplication .mytel-extension-tools{bottom:7px;inset-inline-end:8px}#controlPanelApplication .mytel-extension-panel>dt{flex-wrap:wrap}#controlPanelApplication .mytel-directory-bottom{padding:11px 12px;font-size:8px;gap:7px}#controlPanelApplication .mytel-banner{margin:0 16px 16px;padding:10px 12px;font-size:11px;align-items:start;flex-direction:column;gap:8px}#controlPanelApplication .mytel-footer{padding:12px 16px;font-size:9px}#controlPanelApplication .mytel-section-badge{font-size:8px}}
+@media(max-width:360px){#controlPanelApplication .mytel-brand img{display:none}#controlPanelApplication .mytel-metric{grid-template-columns:minmax(0,1fr)}#controlPanelApplication .mytel-metric-icon{display:none}#controlPanelApplication .mytel-metric-caption{grid-column:1}#controlPanelApplication .sortablepanelview{grid-template-columns:minmax(0,1fr)}}
+@media(prefers-reduced-motion:reduce){#controlPanelApplication *,#controlPanelApplication *:before,#controlPanelApplication *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+
+/* White MyTel finish and deliberate interactive target sizes. */
+#controlPanelApplication .mytel-brand,#controlPanelApplication .mytel-wordmark{color:#102a44}
+#controlPanelApplication .mytel-metric{box-shadow:0 3px 12px #23476d05}
+#controlPanelApplication .mytel-surface{box-shadow:0 4px 18px #23476d04}
+#controlPanelApplication .mytel-icon-button{width:44px;height:44px}
+#controlPanelApplication .mytel-filters button{min-height:44px}
+#controlPanelApplication .mytel-info{min-width:28px;min-height:28px}
+#controlPanelApplication .mytel-extension-tools .phone-icon{min-width:28px;min-height:28px;justify-content:center}
+@media(max-width:650px){#controlPanelApplication .mytel-icon-button{width:44px;height:44px}#controlPanelApplication .mytel-filters button{min-height:44px}#controlPanelApplication .mytel-extension-body{min-height:138px}#controlPanelApplication .mytel-extension-activity{padding-bottom:35px}#controlPanelApplication .mytel-extension-tools{bottom:0;inset-inline-end:2px;gap:0}#controlPanelApplication .mytel-info,#controlPanelApplication .mytel-extension-tools .phone-icon{min-width:44px;min-height:44px}}
+
+/* Live calls and the keyboard-accessible operator inspector. */
+#controlPanelApplication .mytel-operator-controls{display:flex;align-items:center;gap:15px;flex-wrap:wrap;padding:0 28px 20px}
+#controlPanelApplication .mytel-operator-controls label{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:600;color:#344e67}
+#controlPanelApplication :is(.mytel-operator-controls select,.mytel-call-state-label select){min-height:44px;max-width:280px;padding:8px 30px 8px 10px;border:1px solid #d5e1ed;border-radius:8px;background:#fff;color:#243e59;font:12px/1.5 inherit}
+#controlPanelApplication .mytel-operator-controls p{margin:0;font-size:10px;color:#677c91}
+#controlPanelApplication .mytel-live-calls{margin:0 28px 22px}
+#controlPanelApplication .mytel-live-calls .mytel-section-heading p{max-width:650px}
+#controlPanelApplication .mytel-call-count{font:11px/1.5 Arial,sans-serif;display:inline-flex;align-items:center;justify-content:center;min-width:22px;min-height:22px;background:#edf4fb;color:#356b96;border:1px solid #d5e5f3;border-radius:5px;padding:1px 5px;margin-inline-start:6px;vertical-align:middle}
+#controlPanelApplication .mytel-data-status{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;color:#6d8196;font-size:10px;flex-shrink:0}
+#controlPanelApplication .mytel-data-status:before{content:'';width:5px;height:5px;border-radius:50%;background:#9caaba}
+#controlPanelApplication .mytel-data-status[data-fresh=true]{color:#277a57}
+#controlPanelApplication .mytel-data-status[data-fresh=true]:before{background:#168b64}
+#controlPanelApplication[data-state=disconnected] .mytel-data-status:before,#controlPanelApplication[data-state=permission] .mytel-data-status:before{background:#bd811c}
+#controlPanelApplication .mytel-call-toolbar{display:flex;align-items:center;gap:13px;padding:13px 18px}
+#controlPanelApplication .mytel-call-toolbar .mytel-search{max-width:500px}
+#controlPanelApplication .mytel-call-state-label{display:flex;align-items:center;gap:8px;font-size:11px;color:#536f87}
+#controlPanelApplication .mytel-call-state-label select{min-width:140px}
+#controlPanelApplication .mytel-table-scroll{overflow-x:auto;scrollbar-width:thin;scrollbar-color:#bdcede #f5f8fb}
+#controlPanelApplication .mytel-call-table{border-collapse:collapse;width:100%;min-width:760px;font-size:11px;color:#38546c;margin:0;table-layout:auto}
+#controlPanelApplication .mytel-call-table th{font-weight:500;color:#61798f;background:#f6f9fc;font-size:10px;padding:10px 14px;border-block:1px solid #e4ebf3;text-align:start;white-space:nowrap}
+#controlPanelApplication .mytel-call-table td{padding:11px 14px;border-bottom:1px solid #e8eef5;vertical-align:middle;text-align:start;white-space:nowrap}
+#controlPanelApplication .mytel-call-table td:first-child{max-width:300px;white-space:normal}
+#controlPanelApplication .mytel-call-table td:first-child strong{font-size:12px;font-weight:600;color:#28445e}
+#controlPanelApplication .mytel-call-table tr:last-child td{border-bottom:0}
+#controlPanelApplication .mytel-call-table tr:hover{background:#fbfdff}
+#controlPanelApplication .mytel-cell-secondary{display:block;font-size:9px;color:#6f859a;margin-top:3px;overflow-wrap:anywhere}
+#controlPanelApplication .mytel-number,#controlPanelApplication .mytel-call-clock{font-family:Arial,sans-serif;direction:ltr;font-variant-numeric:tabular-nums}
+#controlPanelApplication .mytel-call-clock{font-size:11px;color:#385e80}
+#controlPanelApplication .mytel-call-state{display:inline-flex;padding:3px 7px;font-size:10px;border-radius:5px;background:#eef2f7;color:#617489;border:1px solid #dbe3ed;white-space:nowrap}
+#controlPanelApplication .mytel-call-state.in-call{background:#edf5ff;border-color:#cfe1f8;color:#196caf}
+#controlPanelApplication .mytel-call-state.ringing,#controlPanelApplication .mytel-call-state.waiting{background:#fff7e8;border-color:#f2d9a4;color:#906013}
+#controlPanelApplication .mytel-call-state.hold{background:#f4effd;border-color:#e2d5f5;color:#76509b}
+#controlPanelApplication .mytel-call-table .mytel-secondary-button{min-height:36px;font-size:10px;padding:6px 10px}
+#controlPanelApplication .mytel-call-empty{padding:24px 18px;margin:0;text-align:center;color:#647c94;font-size:12px;border-top:1px solid #edf1f6}
+#controlPanelApplication .mytel-call-footnote{display:flex;justify-content:space-between;gap:15px;padding:11px 18px;background:#fafcfe;border-top:1px solid #e7edf4;font-size:9px;color:#71869a}
+#controlPanelApplication .mytel-call-footnote>span:first-child{white-space:nowrap;flex-shrink:0}
+#controlPanelApplication.mytel-calls-ready .queueParameters{display:none}
+#controlPanelApplication .mytel-queue-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:12px 10px 5px;background:#f9fbfe;border-bottom:0}
+#controlPanelApplication .mytel-queue-summary>div{min-width:0;text-align:center}
+#controlPanelApplication .mytel-queue-summary strong{display:block;font:600 15px/1.7 Arial,sans-serif;color:#284b6d;text-align:center}
+#controlPanelApplication .mytel-queue-summary span{display:block;font-size:8px;color:#6d8297;text-align:center}
+#controlPanelApplication .mytel-summary-note{grid-column:1/-1;margin:2px 0 0;font-size:8px;color:#996b27}
+#controlPanelApplication .mytel-queue-period{margin:0;padding:3px 12px 9px;text-align:center;font-size:8px;color:#7b8ea1;background:#f9fbfe;border-bottom:1px solid #e2eaf3}
+#controlPanelApplication .mytel-inspector{width:min(760px,calc(100vw - 32px));max-height:88vh;overflow:auto;margin:auto;padding:0;background:#fff;border:1px solid #c9d9e9;border-radius:15px;box-shadow:0 25px 90px #102b4850;color:#263f58;font:13px/1.7 MyTelVazirmatn,Tahoma,Arial,sans-serif}
+#controlPanelApplication .mytel-inspector::backdrop{background:#0d223c66;backdrop-filter:blur(3px)}
+#controlPanelApplication .mytel-inspector-heading{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:18px 22px;background:#fff;border-bottom:1px solid #dce5ef}
+#controlPanelApplication .mytel-inspector-heading h2{margin:0;font-size:20px;color:#15314c}
+#controlPanelApplication .mytel-inspector-heading .mytel-eyebrow{font-size:9px}
+#controlPanelApplication .mytel-inspector [data-inspector-content]{padding:18px 22px 22px}
+#controlPanelApplication .mytel-inspector-freshness{margin:0 0 12px;color:#63829b;font-size:10px}
+#controlPanelApplication .mytel-inspector-name{font-size:16px;margin:0 0 14px}
+#controlPanelApplication .mytel-detail-grid{display:grid;grid-template-columns:minmax(90px,.7fr) minmax(0,1.4fr) minmax(90px,.7fr) minmax(0,1.4fr);gap:8px 12px;margin:0;padding:0;font-size:11px}
+#controlPanelApplication .mytel-detail-grid dt{color:#718599;font-size:10px}
+#controlPanelApplication .mytel-detail-grid dd{color:#34506a;margin:0;overflow-wrap:anywhere;min-width:0;white-space:normal}
+#controlPanelApplication .mytel-callback-controls{display:flex;align-items:center;gap:13px;margin-top:18px;padding:13px;background:#f7faff;border:1px solid #dce8f4;border-radius:9px}
+#controlPanelApplication .mytel-primary-button{background:#f4a52c;border-color:#e9a33d;color:#3d2c14;font-weight:600;flex-shrink:0}
+#controlPanelApplication .mytel-action-note{font-size:10px;line-height:1.6;color:#73889b;margin:6px 0}
+#controlPanelApplication .mytel-action-feedback{margin:14px 0;padding:0;font-size:11px;color:#56748e;min-height:0}
+#controlPanelApplication .mytel-action-feedback:not(:empty){padding:9px 12px;border-radius:7px;background:#f2f7fc;border:1px solid #dae6f1}
+#controlPanelApplication .mytel-action-feedback.error{background:#fff2f3;color:#9a3d4a;border-color:#f2d1d7}
+#controlPanelApplication .mytel-action-feedback.success{background:#eff9f3;color:#24724e;border-color:#cde8d8}
+#controlPanelApplication .mytel-inspector-subtitle{font-size:13px;margin:19px 0 10px}
+#controlPanelApplication .mytel-inspector-call{border:1px solid #dce6ef;border-radius:10px;padding:14px;margin-top:11px;background:#fcfdff}
+#controlPanelApplication .mytel-inspector-call-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+#controlPanelApplication .mytel-inspector-call-heading h3{font:600 14px/1.6 Arial,sans-serif;margin:0;overflow-wrap:anywhere}
+#controlPanelApplication .mytel-channel-details{margin-top:13px;border-top:1px solid #e4ebf3;padding-top:8px}
+#controlPanelApplication .mytel-channel-details summary{cursor:pointer;color:#3576ad;font-size:11px;min-height:32px;padding:4px 0}
+#controlPanelApplication .mytel-channel-details .mytel-detail-grid{padding:7px 0 12px}
+#controlPanelApplication .mytel-danger-button{margin-top:10px;background:#fff5f5;border-color:#e8c8cd;color:#a33c50;min-height:44px;font-size:10px}
+@media(max-width:850px){#controlPanelApplication .mytel-detail-grid{grid-template-columns:minmax(100px,.8fr) minmax(0,1.6fr)}}
+@media(max-width:650px){#controlPanelApplication .mytel-operator-controls{padding:0 16px 17px;gap:6px}#controlPanelApplication .mytel-operator-controls label{width:100%;justify-content:space-between;font-size:11px}#controlPanelApplication .mytel-operator-controls select{max-width:240px;min-width:180px}#controlPanelApplication .mytel-live-calls{margin:0 12px 16px}#controlPanelApplication .mytel-live-calls .mytel-section-heading{align-items:start}#controlPanelApplication .mytel-live-calls .mytel-section-heading p{font-size:9px;max-width:220px}#controlPanelApplication .mytel-call-toolbar{display:block;padding:12px}#controlPanelApplication .mytel-call-state-label{margin-top:9px;justify-content:space-between}#controlPanelApplication .mytel-call-state-label select{min-width:180px}#controlPanelApplication .mytel-call-table .mytel-secondary-button{min-height:44px}#controlPanelApplication .mytel-call-footnote{display:block;padding:10px 12px;font-size:8px}#controlPanelApplication .mytel-call-footnote>span{display:block}#controlPanelApplication .mytel-inspector{width:calc(100vw - 16px);max-height:94vh;border-radius:12px}#controlPanelApplication .mytel-inspector-heading{padding:13px 15px}#controlPanelApplication .mytel-inspector-heading h2{font-size:18px}#controlPanelApplication .mytel-inspector [data-inspector-content]{padding:14px}#controlPanelApplication .mytel-inspector-call{padding:12px}#controlPanelApplication .mytel-callback-controls{display:block}#controlPanelApplication .mytel-callback-controls p{margin-top:8px}#controlPanelApplication .mytel-detail-grid{gap:7px 9px;font-size:10px}#controlPanelApplication .mytel-channel-details summary{min-height:44px}#controlPanelApplication .mytel-data-status{font-size:9px}}
+
+#controlPanelApplication .mytel-visually-hidden{inset:0 auto auto 0;clip-path:inset(50%)}
+#controlPanelApplication .mytel-membership{margin:10px 0;padding:12px;border:1px solid #dce7f1;border-radius:8px;background:#fafcfe}
+#controlPanelApplication .mytel-membership h4{font-size:12px;margin:0 0 10px}
+
+/* Contrast finish: small text meets WCAG AA on the light MyTel surfaces. */
+#controlPanelApplication .mytel-eyebrow{color:#986009}
+#controlPanelApplication .mytel-connection[data-connection=connected]{color:#116e50}
+#controlPanelApplication .mytel-connection[data-connection=connecting]{color:#80520d}
+#controlPanelApplication .mytel-metric-caption,
+#controlPanelApplication .mytel-operator-controls p,
+#controlPanelApplication .mytel-call-table th,
+#controlPanelApplication .mytel-cell-secondary,
+#controlPanelApplication .mytel-call-footnote,
+#controlPanelApplication .mytel-queue-period,
+#controlPanelApplication .mytel-queue-summary span,
+#controlPanelApplication .mytel-action-note,
+#controlPanelApplication .mytel-detail-grid dt,
+#controlPanelApplication .mytel-inspector-freshness,
+#controlPanelApplication .mytel-data-status,
+#controlPanelApplication .mytel-directory-bottom,
+#controlPanelApplication .mytel-idle-label,
+#controlPanelApplication .mytel-extension-state,
+#controlPanelApplication .mytel-group-count,
+#controlPanelApplication .mytel-footer,
+#controlPanelApplication .mytel-empty,
+#controlPanelApplication .mytel-description,
+#controlPanelApplication .mytel-update{color:#52677e}
+#controlPanelApplication .mytel-search input::placeholder{color:#536a80;opacity:1}
+#controlPanelApplication .mytel-call-state{color:#4e6277}
+#controlPanelApplication .mytel-call-state.in-call{color:#175e9b}
+#controlPanelApplication .mytel-call-state.ringing,
+#controlPanelApplication .mytel-call-state.waiting{color:#80520d}
+#controlPanelApplication .mytel-call-state.hold{color:#69418d}
+#controlPanelApplication .mytel-data-status[data-fresh=true]{color:#196b48}
+#controlPanelApplication .pbxactive .mytel-extension-state{color:#146b47}
+#controlPanelApplication [data-phone-state=busy] .mytel-extension-state{color:#135f99}
+#controlPanelApplication [data-phone-state=ringing] .mytel-extension-state{color:#80520d}
+#controlPanelApplication .mytel-action-feedback{color:#465f77}
+#controlPanelApplication .mytel-summary-note{color:#80520d}
+/* Secondary labels retain readable contrast on light resource surfaces. */
+#controlPanelApplication .mytel-info,#controlPanelApplication .mytel-section-badge,#controlPanelApplication .Queue-Agents>span>strong,#controlPanelApplication .mytel-queue-callers h4,#controlPanelApplication .mytel-resource>div>span{color:#52677e}

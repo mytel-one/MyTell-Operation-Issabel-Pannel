@@ -1,0 +1,46 @@
+name: Verify panel
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['7.4', '8.3']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: sqlite3, pdo_sqlite, mysqli, mbstring, simplexml
+          coverage: none
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: PHP and Bash syntax
+        run: |
+          find control_panel control_panel_en -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+          bash -n install.sh
+      - name: PHP regressions
+        run: |
+          php tests/backend_regressions.php control_panel
+          php tests/backend_regressions.php control_panel_en
+          php tests/backend_live.php control_panel
+          php tests/backend_live.php control_panel_en
+          php tests/snapshot_startup.php control_panel
+          php tests/snapshot_startup.php control_panel_en
+      - name: Browser logic regressions
+        run: node --test tests/*.cjs
+      - name: Installer regressions
+        run: |
+          sudo useradd --system --user-group --no-create-home --shell /usr/sbin/nologin asterisk
+          sudo python3 -m unittest discover -s tests -p 'installer_test.py' -v
