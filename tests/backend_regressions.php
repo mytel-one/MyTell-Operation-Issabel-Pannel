@@ -86,6 +86,12 @@ check($state['iptrunks']['PJSIP/provider']['ip'] === '2001:db8::1', 'PJSIP trunk
 $panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'provider','DeviceState'=>'Unavailable','Contacts'=>'provider/sip:provider@192.0.2.20:5060,'), '', 0);
 $state = getPanel($panel, '_internalState');
 check($state['iptrunks']['PJSIP/provider']['registered'] === FALSE, 'a configured static trunk contact never overrides unavailable device evidence');
+$panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'provider','DeviceState'=>'Not in use','Contacts'=>'provider/sip:192.0.2.20:5060,'), '', 0);
+$state = getPanel($panel, '_internalState');
+check($state['iptrunks']['PJSIP/provider']['registered'] === TRUE && $state['iptrunks']['PJSIP/provider']['ip'] === '192.0.2.20', 'state-ready host-only trunk contact URIs preserve their observed address');
+$panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'100','DeviceState'=>'Unavailable','Contacts'=>'100/sip:100@0.0.0.0:5060,'), '', 0);
+$state = getPanel($panel, '_internalState');
+check($state['phones']['PJSIP/100']['registered'] === FALSE && $state['phones']['PJSIP/100']['ip'] === NULL, 'unspecified contact addresses never mark a phone as registered');
 // Pure request-policy checks do not require a logged-in Issabel session.
 $security = $module . '/libs/mytelRequestSecurity.php';
 check(is_file($security), 'request policy helper is present');
