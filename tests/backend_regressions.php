@@ -71,9 +71,21 @@ $panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>
 $state = getPanel($panel, '_internalState');
 check($state['phones']['PJSIP/100']['registered'] === TRUE, 'busy PJSIP extension remains registered');
 check($state['phones']['PJSIP/100']['ip'] === '192.0.2.10', 'PJSIP contact exposes address without SIP scheme or port');
+$panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'100','DeviceState'=>'Unavailable','Contacts'=>'100/sip:100@192.0.2.10:39027;transport=TCP;rinstance=test-fixture,'), '', 0);
+$state = getPanel($panel, '_internalState');
+check($state['phones']['PJSIP/100']['registered'] === TRUE, 'idle PJSIP contact remains registered when qualification is disabled and DeviceState is Unavailable');
+check($state['phones']['PJSIP/100']['ip'] === '192.0.2.10', 'idle unqualified contact still exposes its observed endpoint address');
+check(isset($state['phones']['PJSIP/100']['device_state']) && $state['phones']['PJSIP/100']['device_state'] === 'Unavailable', 'raw endpoint device state stays distinct from contact registration');
+check(isset($state['phones']['PJSIP/100']['transport']) && $state['phones']['PJSIP/100']['transport'] === 'TCP', 'reported contact transport is preserved without changing PBX configuration');
+$panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'100','DeviceState'=>'Not in use','Contacts'=>''), '', 0);
+$state = getPanel($panel, '_internalState');
+check($state['phones']['PJSIP/100']['registered'] === FALSE, 'an explicitly empty PJSIP contact list never reports a phone as registered');
 $panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'provider','DeviceState'=>'Not in use','Contacts'=>'provider/sip:provider@[2001:db8::1]:5060,'), '', 0);
 $state = getPanel($panel, '_internalState');
 check($state['iptrunks']['PJSIP/provider']['ip'] === '2001:db8::1', 'PJSIP trunk IPv6 contacts parse correctly');
+$panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'provider','DeviceState'=>'Unavailable','Contacts'=>'provider/sip:provider@192.0.2.20:5060,'), '', 0);
+$state = getPanel($panel, '_internalState');
+check($state['iptrunks']['PJSIP/provider']['registered'] === FALSE, 'a configured static trunk contact never overrides unavailable device evidence');
 // Pure request-policy checks do not require a logged-in Issabel session.
 $security = $module . '/libs/mytelRequestSecurity.php';
 check(is_file($security), 'request policy helper is present');
