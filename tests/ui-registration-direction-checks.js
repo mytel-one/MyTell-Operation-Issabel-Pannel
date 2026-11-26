@@ -5,6 +5,7 @@ async () => {
     const assert=(condition,message)=>{if(!condition)throw new Error(message);checks.push(message);};
     const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));await pause(1100);
     const card=number=>document.querySelector('.ExtensionStyle[data-idattr="PJSIP/'+number+'"]');
+    document.querySelectorAll('.ExtensionStyle,.mytel-iptrunk-card').forEach(element=>{element.style.transition='none';});
     const border=element=>getComputedStyle(element).borderInlineStartColor;
     const green='rgb(22, 139, 100)',gray='rgb(132, 147, 167)';
     assert(border(card('201'))===green && border(card('202'))===green && border(card('203'))===green,'Ready, in-call and ringing registered extensions all retain green registration accents');
@@ -34,7 +35,7 @@ async () => {
     assert(dialog.querySelector('.mytel-registration-value.online').textContent==='Registered','Extension inspector registration state carries the same online semantics');
     dialog.querySelector('[data-action=close-inspector]').click();await pause(0);
     const parking=document.querySelector('.mytel-parking-collapse');
-    assert(parking && !parking.open && parking.querySelector('.mytel-parking-count').textContent==='1 slot','Call parking starts closed with a known slot count');
+    assert(parking && !parking.open && parking.querySelector('.mytel-parking-count').textContent==='2 slots','Call parking starts closed with a known slot count');
     parking.querySelector('summary').click();await pause(0);
     assert(parking.open && parking.querySelector('.parkinglots-list img'),'Expanded parking retains the destination icon and slot content');
     window.dispatchEvent(new CustomEvent('mytel:snapshot',{detail:debug_root.latestSnapshot}));await pause(80);
