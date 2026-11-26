@@ -63,6 +63,8 @@ class InstallerIntegrationTests(unittest.TestCase):
             db.execute('CREATE TABLE acl_resource(id INTEGER PRIMARY KEY,name TEXT)')
             db.execute('CREATE TABLE acl_group(id INTEGER PRIMARY KEY,name TEXT)')
             db.execute('CREATE TABLE acl_group_permission(id INTEGER PRIMARY KEY,id_action INTEGER,id_group INTEGER,id_resource INTEGER)')
+            db.execute('CREATE TABLE acl_module_privileges(id INTEGER PRIMARY KEY,id_resource INTEGER,privilege TEXT)')
+            db.execute('CREATE TABLE acl_module_group_permissions(id INTEGER PRIMARY KEY,id_module_privilege INTEGER,id_group INTEGER)')
             db.execute("INSERT INTO acl_group VALUES(1,'administrator')")
         with sqlite3.connect(str(self.db / 'control_panel_design.db')) as db:
             db.execute('CREATE TABLE area (id INTEGER PRIMARY KEY, name TEXT, height INTEGER, width INTEGER, description TEXT, no_column INTEGER, color TEXT)')
@@ -78,6 +80,10 @@ if [ "${FAIL_MENU:-0}" = 1 ]; then echo 'ERR: simulated ACL failure' >&2; exit 7
 if [ "${SILENT_MENU:-0}" = 1 ]; then exit 0; fi
 php -r '$d=new SQLite3(getenv("FIXTURE_DB")."/menu.db"); $d->exec("INSERT INTO menu VALUES(\\\"control_panel\\\",\\\"pbxconfig\\\")"); $d=new SQLite3(getenv("FIXTURE_DB")."/acl.db"); $d->exec("INSERT INTO acl_resource VALUES(42,\\\"control_panel\\\")"); $d->exec("INSERT INTO acl_group_permission VALUES(42,1,1,42)");'
 ''')
+        with merger.open('a') as script:
+            script.write("""if [ "${SKIP_ACTION_PRIVILEGES:-0}" = 1 ]; then exit 0; fi
+php -r '$db=new SQLite3(getenv("FIXTURE_DB")."/acl.db");$xml=simplexml_load_file($argv[1]);foreach($xml->menulist->menuitem->privilege as $permission){$q=$db->prepare("INSERT INTO acl_module_privileges(id_resource,privilege) VALUES(42,?)");$q->bindValue(1,(string)$permission["name"],SQLITE3_TEXT);$q->execute();$db->exec("INSERT INTO acl_module_group_permissions(id_group,id_module_privilege) VALUES(1,".$db->lastInsertRowID().")");}' "$1"
+""")
         merger.chmod(0o755)
         self.env = dict(os.environ, PATH=str(bindir) + ':' + os.environ['PATH'],
                         FIXTURE_DB=str(self.db))
@@ -118,6 +124,12 @@ php -r '$d=new SQLite3(getenv("FIXTURE_DB")."/menu.db"); $d->exec("INSERT INTO m
         with sqlite3.connect(str(self.db / 'menu.db')) as db:
             self.assertEqual(db.execute('SELECT value FROM marker').fetchone(), ('preserved',))
         self.assertNotIn('Installation complete', result.stdout)
+
+    def test_missing_action_privileges_roll_back_installation(self):
+        result = self.run_installer('--lang', 'en', env=dict(self.env, SKIP_ACTION_PRIVILEGES='1'))
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('action privilege registration failed', result.stdout + result.stderr)
+        self.assertFalse((self.web / 'modules/control_panel').exists())
 
     def test_existing_ami_configuration_is_preserved(self):
         old = self.web / 'modules/control_panel/libs'

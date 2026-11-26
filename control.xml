@@ -8,6 +8,14 @@
       <permissions> 
         <group id="1" name="administrator" desc="total access"></group> 
       </permissions> 
+      <privilege name="call" desc="Place callback calls and call voicemail"><grant2group name="administrator"/></privilege>
+      <privilege name="transfer" desc="Transfer active calls"><grant2group name="administrator"/></privilege>
+      <privilege name="pickup" desc="Pick up ringing internal calls"><grant2group name="administrator"/></privilege>
+      <privilege name="park" desc="Park and retrieve calls"><grant2group name="administrator"/></privilege>
+      <privilege name="hangup" desc="End active calls"><grant2group name="administrator"/></privilege>
+      <privilege name="queues" desc="Manage queue agents"><grant2group name="administrator"/></privilege>
+      <privilege name="membership" desc="Sign dynamic queue agents in or out"><grant2group name="administrator"/></privilege>
+      <privilege name="layout" desc="Edit shared extension groups"><grant2group name="administrator"/></privilege>
     </menuitem>
 
 	

@@ -1,5 +1,6 @@
 /* Run on a clean connected synthetic fixture through browser evaluate. */
 async () => {
+    const fixtureLocation=new URL(window.location.href);if(!['127.0.0.1','localhost'].includes(fixtureLocation.hostname) || fixtureLocation.pathname!=='/artifacts/ui/preview.html' || !Array.isArray(window.fixtureActionLog) || !window.var_init || window.var_init.CSRF_TOKEN!=='synthetic-fixture-only')throw new Error('This browser action test is restricted to the local synthetic fixture.');
     const checks=[];
     const assert=(condition,message)=>{if(!condition)throw new Error(message);checks.push(message);};
     const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));await pause(1100);

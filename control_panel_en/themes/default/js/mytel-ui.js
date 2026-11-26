@@ -56,7 +56,17 @@
         return result;
     }
 
-    var api = {normalize: normalize, phoneState: phoneState, matches: matches, summarize: summarize};
+    function sanitizePreferences(value) {
+        value=value && typeof value==='object' && !Array.isArray(value)?value:{};
+        var favorites=Array.isArray(value.favorites)?value.favorites:[];
+        favorites=favorites.filter(function(item,index,array){return typeof item==='string' && /^[0-9*#]{1,40}$/.test(item) && array.indexOf(item)===index;}).slice(0,2000);
+        return {favorites:favorites,view:value.view==='favorites'?'favorites':'all',team:/^(all|extensions|area[1-9])$/.test(value.team)?value.team:'all',display:value.display==='list'?'list':'cards'};
+    }
+    function preferenceScope() { return global.var_init && typeof global.var_init.OPERATOR_KEY==='string' && global.var_init.OPERATOR_KEY?global.var_init.OPERATOR_KEY:'session'; }
+    function preferenceStore() { try{return preferenceScope()==='session'?global.sessionStorage:global.localStorage;}catch(ignore){return null;} }
+    function access(action) { return !!(global.var_init && global.var_init.OPERATOR_ACCESS && global.var_init.OPERATOR_ACCESS[action]===true); }
+
+    var api = {normalize: normalize, phoneState: phoneState, matches: matches, summarize: summarize,sanitizePreferences:sanitizePreferences,preferenceScope:preferenceScope,preferenceStore:preferenceStore,access:access};
     if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
     global.MyTelUI = api;
     var document = global.document;
@@ -70,6 +80,49 @@
     var tick = null;
     var initialized = false;
     var english = false;
+    var preferences=sanitizePreferences(null);
+    api.favoriteNumbers=function(){return preferences.favorites.slice();};
+    var advancedTool=null;var advancedReturnFocus=null;
+    function canEmbedTool(tool,url){return (tool.embed_url==='fop2/' || tool.embed_url==='/fop2/') && url.origin===global.location.origin && url.searchParams.get('menu')==='fop2app' && /\/index\.php$/.test(url.pathname);}
+    function closeAdvanced(){var root=document.getElementById('controlPanelApplication');var dialog=root&&root.querySelector('#mytel-advanced-dialog');if(!dialog)return;var host=dialog.querySelector('[data-advanced-frame-host]');if(host)host.replaceChildren();if(dialog.open)dialog.close();if(advancedReturnFocus && advancedReturnFocus.isConnected)advancedReturnFocus.focus();}
+    function openAdvanced(){
+        if(!advancedTool)return;var root=document.getElementById('controlPanelApplication');var dialog=root&&root.querySelector('#mytel-advanced-dialog');if(!dialog)return;
+        if(!dialog.open)advancedReturnFocus=document.activeElement;var host=dialog.querySelector('[data-advanced-frame-host]');host.replaceChildren();var frame=document.createElement('iframe');frame.title='Advanced operator console — separate login';frame.referrerPolicy='no-referrer';frame.allow='microphone; autoplay';frame.src=new URL('/fop2/',global.location.origin).href;host.appendChild(frame);var fallback=dialog.querySelector('[data-advanced-fallback]');fallback.href=advancedTool.url;
+        if(!dialog.open)dialog.showModal();
+    }
+    function preferenceKey(){return 'mytel.directory.'+(global.module_name || 'control_panel')+'.'+preferenceScope();}
+    function savePreferences(){try{var storage=preferenceStore();if(storage)storage.setItem(preferenceKey(),JSON.stringify(preferences));}catch(ignore){/* Preferences are optional. */}}
+
+    function updateDirectoryViews(root,teams,phones,loaded){
+        var directory=root.querySelector('.mytel-directory');if(directory)directory.setAttribute('data-display',preferences.display);
+        var favorites=phones.filter(function(phone){return preferences.favorites.indexOf(String(read(phone,'extension','')))!==-1;}).length;
+        text(root,'[data-favorites-count]',loaded?formatNumber(favorites):'—');
+        Array.prototype.forEach.call(root.querySelectorAll('[data-directory-view]'),function(button){button.setAttribute('aria-pressed',button.getAttribute('data-directory-view')===preferences.view?'true':'false');});
+        Array.prototype.forEach.call(root.querySelectorAll('[data-directory-display]'),function(button){button.setAttribute('aria-pressed',button.getAttribute('data-directory-display')===preferences.display?'true':'false');});
+        var select=root.querySelector('#mytel-team');if(select){
+            var signature=JSON.stringify(teams);
+            if(select.getAttribute('data-teams')!==signature){select.replaceChildren();var all=document.createElement('option');all.value='all';all.textContent=phrase('همه تیم‌ها','All teams');select.appendChild(all);teams.forEach(function(team){var option=document.createElement('option');option.value=team.key;option.textContent=team.description+' ('+team.count+')';select.appendChild(option);});select.setAttribute('data-teams',signature);}
+            if(preferences.team!=='all' && !teams.some(function(team){return team.key===preferences.team;}))preferences.team='all';select.value=preferences.team;select.disabled=!loaded;
+        }
+    }
+    function updatePermissions(root){
+        root.setAttribute('data-can-call',access('call')?'true':'false');root.setAttribute('data-can-layout',access('layout')?'true':'false');
+        Array.prototype.forEach.call(root.querySelectorAll('.phone-icon'),function(icon){icon.setAttribute('aria-disabled',access('call')?'false':'true');icon.title=access('call')?'Drag the phone icon onto a destination to place a call.':'Call controls are read-only for this account.';});
+        var allowed=['call','pickup','transfer','park','queues','membership','hangup'].filter(access);
+        text(root,'[data-access-summary]',allowed.length?phrase('ابزارهای مجاز: ','Available actions: ')+allowed.map(function(value){return {call:'Call',pickup:'Pickup',transfer:'Transfer / consult',park:'Park',queues:'Pause / resume',membership:'Queue sign-in / sign-out',hangup:'End call'}[value];}).join(' · '):phrase('این حساب فقط امکان مشاهده دارد.','Monitoring only. Call controls are not permitted for this account.'));
+        var accessSummary=root.querySelector('[data-access-summary]');if(accessSummary)accessSummary.hidden=allowed.length===7;
+        Array.prototype.forEach.call(root.querySelectorAll('.paneledittitle'),function(button){button.hidden=!access('layout');});
+        var organize=root.querySelector('[data-action=groups]');if(organize){organize.hidden=!access('layout');}
+        if(typeof global.jQuery==='function'){
+            var $=global.jQuery;
+            ['.sortablepanelview','.lisortable'].forEach(function(selector){$(root).find(selector).each(function(){var element=$(this);if(element.hasClass('ui-sortable') && element.attr('data-access-layout')!==String(access('layout'))){element.sortable('option','disabled',!access('layout'));element.attr('data-access-layout',String(access('layout')));}});});
+            $(root).find('.ui-draggable').each(function(){var element=$(this);if(element.attr('data-access-call')!==String(access('call'))){element.draggable('option','disabled',!access('call'));element.attr('data-access-call',String(access('call')));}});
+            $(root).find('.ui-droppable').each(function(){var element=$(this);if(element.attr('data-access-drop')!==String(access('call'))){element.droppable('option','disabled',!access('call'));element.attr('data-access-drop',String(access('call')));}});
+            $(root).find('.parkinglots-list .ui-droppable').each(function(){$(this).droppable('option','disabled',true);});
+        }
+        var tools=root.querySelector('[data-operator-tools]');var links=root.querySelector('[data-operator-tool-links]');
+        if(tools && links && !links.hasAttribute('data-loaded')){var entries=global.var_init && Array.isArray(global.var_init.OPERATOR_TOOLS)?global.var_init.OPERATOR_TOOLS:[];entries.forEach(function(tool){try{if(!tool || typeof tool.url!=='string' || !tool.url.trim())return;var url=new URL(tool.url,global.location.href);if(!/^https?:$/.test(url.protocol) || url.username || url.password)return;if(canEmbedTool(tool,url)){advancedTool={url:url.href};var button=document.createElement('button');button.type='button';button.setAttribute('data-action','open-advanced');button.textContent=String(tool.label || 'Advanced console');links.appendChild(button);}else{var link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=String(tool.label || 'Operator tool');links.appendChild(link);}}catch(ignore){}});tools.hidden=!links.children.length;links.setAttribute('data-loaded','true');}
+    }
 
     function phrase(fa, en) { return english ? en : fa; }
     function text(root, selector, value) {
@@ -138,10 +191,11 @@
             text(root, '[data-banner-text]', message);
             text(banner, '[data-action=retry]', connection === 'permission' ? phrase('ورود مجدد', 'Sign in again') : phrase('تلاش دوباره', 'Retry connection'));
         }
-        var allPhones = [];
+        var allPhones = [];var teamByChannel=Object.create(null);var teams=[];
         if (current) ['extensions', 'area1', 'area2', 'area3', 'area4', 'area5', 'area6', 'area7', 'area8', 'area9'].forEach(function (key) {
-            allPhones = allPhones.concat(collection(read(current, key, null)));
+            var group=read(current,key,null);var members=collection(group);allPhones=allPhones.concat(members);members.forEach(function(phone){teamByChannel[read(phone,'channel','')]=key;});if(members.length)teams.push({key:key,description:read(group,'description',key==='extensions'?'Main directory':'Team '+key.replace('area','')),count:members.length});
         });
+        updateDirectoryViews(root,teams,allPhones,loaded);updatePermissions(root);
         var queues = collection(read(current, 'queues', null));
         var totals = summarize(allPhones, queues);
         var byChannel = Object.create(null);
@@ -152,7 +206,8 @@
             var phone = byChannel[card.getAttribute('data-idattr')];
             if (!phone) { card.hidden = true; return; }
             var state = phoneState(phone);
-            var shown = matches(phone, query, filter);
+            var number=String(read(phone,'extension',''));var favorite=preferences.favorites.indexOf(number)!==-1;
+            var shown = matches(phone, query, filter) && (preferences.view==='all' || favorite) && (preferences.team==='all' || teamByChannel[read(phone,'channel','')]===preferences.team);
             card.hidden = !shown;
             if (shown) visible++;
             card.setAttribute('data-phone-state', state);
@@ -165,6 +220,7 @@
             var stateName = registrationName + (activityName ? ' · ' + activityName : '');
             card.setAttribute('aria-label', read(phone, 'extension', '') + ' ' + read(phone, 'description', '') + (english ? ', ' : '، ') + stateName);
             text(card, '.mytel-extension-state', stateName);
+            var star=card.querySelector('[data-action=favorite]');if(star){star.setAttribute('aria-pressed',favorite?'true':'false');star.setAttribute('aria-label',(favorite?'Remove ':'Add ')+number+(favorite?' from favorites':' to favorites'));star.title=star.getAttribute('aria-label');star.textContent=favorite?'★':'☆';}
         });
         Array.prototype.forEach.call(root.querySelectorAll('.mytel-area-panel'), function (panel) {
             var count = panel.querySelectorAll('.ExtensionStyle:not([hidden])').length;
@@ -174,12 +230,14 @@
         ['all', 'online', 'busy', 'offline'].forEach(function (key) { text(root, '[data-filter-count="' + key + '"]', loaded ? formatNumber(totals[key]) : '—'); });
         text(root, '[data-total]', loaded ? formatNumber(totals.all) : '—');
         text(root, '[data-queue-count]', loaded ? formatNumber(queues.length) : '—');
+        text(root,'[data-trunk-count]',loaded?formatNumber(collection(read(current,'iptrunks',null)).length):'—');
         text(root, '[data-results]', loaded ? formatNumber(visible) + phrase(' از ', ' of ') + formatNumber(totals.all) + phrase(' داخلی', ' extensions') : '');
         var feedback = root.querySelector('[data-directory-feedback]');
         if (feedback) {
             feedback.hidden = loaded && visible > 0;
             var feedbackText = phrase('در حال دریافت داخلی‌ها…', 'Loading extensions…');
             if (loaded && totals.all === 0) feedbackText = phrase('هنوز داخلی‌ای برای نمایش وجود ندارد. داخلی‌های تعریف‌شده در ایزابل، اینجا نمایش داده می‌شوند.', 'No extensions to display yet. Extensions configured in Issabel will appear here.');
+            else if(loaded && visible===0 && preferences.view==='favorites' && !allPhones.some(function(phone){return preferences.favorites.indexOf(String(read(phone,'extension','')))!==-1;}))feedbackText=phrase('برای افزودن داخلی به علاقه‌مندی‌ها، ستاره را انتخاب کنید.','No favorites yet. Choose All extensions and use the star to pin your frequent contacts.');
             else if (loaded && visible === 0) feedbackText = phrase('داخلی‌ای با این جستجو و فیلتر پیدا نشد. جستجو یا فیلتر وضعیت را تغییر دهید.', 'No extensions match your search and filter. Change the search or status filter.');
             else if (!loaded && connection === 'permission') feedbackText = labels.permission;
             else if (!loaded && (connection === 'disconnected' || timedOut)) feedbackText = phrase('اطلاعات داخلی‌ها دریافت نشد؛ وضعیت اتصال را بررسی کنید.', 'Extensions could not be loaded. Check the connection status.');
@@ -193,13 +251,21 @@
         var root = document.getElementById('controlPanelApplication');
         if (!root) return;
         initialized = true;
+        try{var storage=preferenceStore();if(storage)preferences=sanitizePreferences(JSON.parse(storage.getItem(preferenceKey()) || 'null'));}catch(ignore){preferences=sanitizePreferences(null);}
         root.addEventListener('input', function (event) {
             if (event.target.id === 'mytel-search') { query = event.target.value; update(); }
         });
         root.addEventListener('click', function (event) {
-            var target = findParent(event.target, '[data-action],[data-filter],a.pbxtooltip', root);
+            var target = findParent(event.target, '[data-action],[data-filter],[data-directory-view],[data-directory-display],a.pbxtooltip', root);
             if (!target) return;
             if (target.matches('a.pbxtooltip')) { event.preventDefault(); return; }
+            if(target.hasAttribute('data-directory-view')){preferences.view=target.getAttribute('data-directory-view');savePreferences();update();return;}
+            if(target.getAttribute('data-action')==='open-advanced'){openAdvanced();return;}
+            if(target.getAttribute('data-action')==='close-advanced'){closeAdvanced();return;}
+            if(target.getAttribute('data-action')==='jump-directory'){var field=root.querySelector('#mytel-search');if(field){field.focus();field.select();}return;}
+            if(target.getAttribute('data-action')==='jump-calls'){var heading=root.querySelector('#mytel-live-title');if(heading){heading.scrollIntoView({block:'start',behavior:'auto'});heading.focus();}return;}
+            if(target.hasAttribute('data-directory-display')){preferences.display=target.getAttribute('data-directory-display');savePreferences();update();return;}
+            if(target.getAttribute('data-action')==='favorite'){var card=findParent(target,'.ExtensionStyle',root);if(card){var body=card.querySelector('.mytel-extension-number');var extension=body && body.textContent.trim();if(extension && /^[0-9*#]{1,40}$/.test(extension)){var position=preferences.favorites.indexOf(extension);if(position===-1)preferences.favorites.push(extension);else preferences.favorites.splice(position,1);savePreferences();update();}}event.stopPropagation();return;}
             if (target.hasAttribute('data-filter')) {
                 filter = target.getAttribute('data-filter');
                 Array.prototype.forEach.call(root.querySelectorAll('[data-filter]'), function (button) { button.setAttribute('aria-pressed', button === target ? 'true' : 'false'); });
@@ -207,7 +273,12 @@
             } else if (target.getAttribute('data-action') === 'retry') retry();
             else if (target.getAttribute('data-action') === 'groups') { showGroups = !showGroups; target.setAttribute('aria-pressed', showGroups ? 'true' : 'false'); update(); }
         });
+        root.addEventListener('change',function(event){if(event.target.id==='mytel-team'){preferences.team=event.target.value;savePreferences();update();}});
+        root.addEventListener('dblclick',function(event){if(!access('call') && findParent(event.target,'.phone-icon',root)){event.preventDefault();event.stopImmediatePropagation();}},true);
+        root.addEventListener('close',function(event){if(event.target.id==='mytel-advanced-dialog' && !event.target.open){var host=event.target.querySelector('[data-advanced-frame-host]');if(host)host.replaceChildren();if(advancedReturnFocus && advancedReturnFocus.isConnected)advancedReturnFocus.focus();}},true);
+        var advancedDialog=root.querySelector('#mytel-advanced-dialog');if(advancedDialog){advancedDialog.addEventListener('cancel',function(){var host=advancedDialog.querySelector('[data-advanced-frame-host]');if(host)host.replaceChildren();});if(global.MutationObserver)new global.MutationObserver(function(){if(!advancedDialog.open){var host=advancedDialog.querySelector('[data-advanced-frame-host]');if(host)host.replaceChildren();}}).observe(advancedDialog,{attributes:true,attributeFilter:['open']});}
         root.addEventListener('keydown', function (event) {
+            if((event.ctrlKey || event.metaKey) && event.key.toLowerCase()==='k'){var search=root.querySelector('#mytel-search');if(search){event.preventDefault();search.focus();search.select();}}
             if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.ExtensionStyle')) { event.preventDefault(); event.target.click(); update(); }
             if (event.key === 'Escape' && event.target.id === 'mytel-search') { event.target.value = ''; query = ''; update(); }
         });

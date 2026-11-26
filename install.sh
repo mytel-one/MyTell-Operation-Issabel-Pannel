@@ -320,7 +320,26 @@ php -r '
     $registered = $menu->querySingle("SELECT COUNT(*) FROM menu WHERE id=\x27control_panel\x27 AND IdParent=\x27pbxconfig\x27");
     $allowed = $acl->querySingle("SELECT COUNT(*) FROM acl_resource r JOIN acl_group_permission p ON p.id_resource=r.id JOIN acl_group g ON g.id=p.id_group WHERE r.name=\x27control_panel\x27 AND g.name=\x27administrator\x27");
     if (!$registered || !$allowed) { fwrite(STDERR, "Menu or administrator permission verification failed\n"); exit(1); }
-' "$DB_ROOT"
+    $definitions = simplexml_load_file($argv[2]);
+    if (!$definitions) exit(1);
+    $query = $acl->prepare("SELECT 1 FROM acl_module_privileges p
+        JOIN acl_resource r ON r.id=p.id_resource
+        JOIN acl_module_group_permissions gp ON gp.id_module_privilege=p.id
+        JOIN acl_group g ON g.id=gp.id_group
+        WHERE r.name=:module AND g.name=:group AND p.privilege=:permission");
+    if (!$query) exit(1);
+    foreach ($definitions->menulist->menuitem->privilege as $privilege) {
+        $query->reset();
+        $query->bindValue(":module", "control_panel", SQLITE3_TEXT);
+        $query->bindValue(":group", "administrator", SQLITE3_TEXT);
+        $query->bindValue(":permission", (string)$privilege["name"], SQLITE3_TEXT);
+        $row = $query->execute();
+        if (!$row || !$row->fetchArray(SQLITE3_NUM)) {
+            fwrite(STDERR, "MyTel action privilege registration failed\n");
+            exit(1);
+        }
+    }
+' "$DB_ROOT" "$SOURCE/control.xml"
 if command -v restorecon >/dev/null 2>&1; then restorecon -R "$DEST"; fi
 [[ -z "$PREVIOUS" || ! -d "$PREVIOUS" ]] || rm -rf -- "$PREVIOUS"
 SWAPPED=0

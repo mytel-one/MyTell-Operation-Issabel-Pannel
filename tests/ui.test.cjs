@@ -55,3 +55,9 @@ test('registration counts stay accurate even when an unregistered device retains
     assert.equal(ui.matches(phone, '', 'offline'), true);
     assert.deepEqual(ui.summarize([phone], []), {all: 1, online: 0, offline: 1, busy: 1, waiting: 0});
 });
+
+test('saved directory preferences validate favorites and reject unsupported layouts and teams',()=>{
+    assert.deepEqual(ui.sanitizePreferences({favorites:['201','201','<script>','*72','',42],view:'favorites',team:'area3',display:'list'}),{favorites:['201','*72'],view:'favorites',team:'area3',display:'list'});
+    assert.deepEqual(ui.sanitizePreferences({favorites:'all',view:'bad',team:'area99',display:'script'}),{favorites:[],view:'all',team:'all',display:'cards'});
+    assert.equal(ui.sanitizePreferences({favorites:Array.from({length:2100},(_,index)=>String(index))}).favorites.length,2000);
+});

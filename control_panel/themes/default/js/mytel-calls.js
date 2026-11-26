@@ -18,6 +18,7 @@
     var timer = null;
     var requestInFlight = null;
     var actionResults = Object.create(null);
+    var callDrafts=Object.create(null);
     var stateLabels = {'in-call':'In call',ringing:'Ringing',waiting:'Waiting',hold:'On hold',dialing:'Dialing',busy:'Busy',down:'Down','off-hook':'Off hook','pre-ring':'Pre-ring',reported:'Reported state',unknown:'Not reported'};
     function callStateLabel(call){return call.state==='reported' && call.reportedState?call.reportedState:stateLabels[call.state];}
 
@@ -49,7 +50,13 @@
         var current = controller();
         return !!current && model.get(current,'connected',false) && Date.now()-model.get(current,'lastUpdatedAt',0)<10000;
     }
-    function sourceKey() { return 'mytel.operator.source.'+(global.module_name || 'control_panel'); }
+    function access(action){return !!(global.var_init && global.var_init.OPERATOR_ACCESS && global.var_init.OPERATOR_ACCESS[action]===true);}
+    function sourceKey() { return 'mytel.operator.source.'+(global.module_name || 'control_panel')+'.'+(global.MyTelUI?global.MyTelUI.preferenceScope():'session'); }
+    function preferenceStore(){try{return global.MyTelUI?global.MyTelUI.preferenceStore():global.sessionStorage;}catch(ignore){return null;}}
+    function latestSnapshot(){return snapshot || model.get(controller(),'latestSnapshot',null);}
+    function parkingLots(){var lots=model.get(latestSnapshot(),'parking_lots',[]);return Array.isArray(lots)?lots:[];}
+    function legKey(leg){return String(leg.channel || '')+'|'+String(leg.uniqueid || '');}
+    function findLeg(channel,uniqueid){var found=null;calls.forEach(function(call){call.legs.forEach(function(leg){if(leg.channel===channel && String(leg.uniqueid || '')===String(uniqueid || ''))found=leg;});});return found;}
     function registered(phone) { var value=model.get(phone,'registered',false); return value===true || value===1 || value==='1'; }
     function findPhone(extension) { return phones.filter(function (phone) { return String(model.get(phone,'extension',''))===String(extension); })[0] || null; }
     function appendPair(list, label, value, className) {
@@ -83,13 +90,12 @@
         return output;
     }
     function updateSource(container) {
-        var select=container.querySelector('#mytel-source-extension');
-        if (!select) return;
+        var selects=container.querySelectorAll('[data-operator-source]');
         var options=phones.map(function (phone) { return {number:String(model.get(phone,'extension','')),name:model.get(phone,'description',''),registered:registered(phone)}; });
         options=options.filter(function (option,index) { return options.findIndex(function (candidate) { return candidate.number===option.number; })===index; });
         options.sort(function (a,b) { return a.number.localeCompare(b.number,undefined,{numeric:true}); });
         var signature=JSON.stringify(options);
-        if (select.getAttribute('data-options-signature')!==signature) {
+        Array.prototype.forEach.call(selects,function(select){if (select.getAttribute('data-options-signature')!==signature) {
             select.replaceChildren();
             var placeholder=node('option','',options.length?'Choose extension':'No extensions available'); placeholder.value=''; select.appendChild(placeholder);
             options.forEach(function (option) { var item=node('option','',option.number+' — '+option.name+(option.registered?'':' (offline)')); item.value=option.number; item.disabled=!option.registered; select.appendChild(item); });
@@ -97,7 +103,25 @@
         }
         if (sourceExtension && !findPhone(sourceExtension)) sourceExtension='';
         select.value=sourceExtension;
-        select.disabled=!loaded() || options.length===0 || !!requestInFlight;
+        select.disabled=!loaded() || options.length===0 || !!requestInFlight;});
+    }
+    function sourcePicker(){var box=node('label','mytel-inline-source','My extension');var select=node('select');select.id='mytel-inspector-source';select.setAttribute('data-operator-source','');box.appendChild(select);return box;}
+    function draftFor(leg){var key=legKey(leg);if(!callDrafts[key])callDrafts[key]={query:'',target:'',lot:''};return callDrafts[key];}
+    function updateControlForm(form,leg){
+        var draft=draftFor(leg);var picker=form.querySelector('[data-role=transfer-target]');
+        if(picker){var options=model.destinationOptions(phones,draft.query,leg.extension,global.MyTelUI&&global.MyTelUI.favoriteNumbers?global.MyTelUI.favoriteNumbers():[]);var signature=JSON.stringify(options.slice(0,80));if(picker.getAttribute('data-options')!==signature){picker.replaceChildren();var placeholder=node('option','','Choose destination');placeholder.value='';picker.appendChild(placeholder);options.slice(0,80).forEach(function(item){var option=node('option','',(item.favorite?'★ ':'')+item.extension+' — '+item.name+(item.registered?'':' (offline)'));option.value=item.extension;picker.appendChild(option);});picker.setAttribute('data-options',signature);}picker.value=draft.target;setText(form.querySelector('[data-destination-count]'),options.length>80?'Showing 80 of '+options.length+' matches. Refine your search.':options.length+' destination'+(options.length===1?'':'s'));}
+        var canSend=fresh() && !requestInFlight;
+        Array.prototype.forEach.call(form.querySelectorAll('[data-action=transfer-call],[data-action=consult-call]'),function(button){button.disabled=!canSend || !draft.target || !findPhone(draft.target) || String(draft.target)===String(leg.extension || '');});
+        var park=form.querySelector('[data-action=park-call]');if(park)park.disabled=!canSend || !draft.lot || !parkingLots().some(function(lot){return String(lot.id)===String(draft.lot);});
+    }
+    function contextualControls(leg,card){
+        var hasTransfer=access('transfer') && (leg.canTransfer || leg.canConsult);var lots=parkingLots();var hasPark=access('park') && leg.canPark && lots.length;
+        if(access('pickup') && leg.canPickup){var pickup=button('Pick up ringing call','pickup-call',{'data-channel':leg.channel,'data-uniqueid':leg.uniqueid});pickup.classList.add('mytel-primary-button');var source=findPhone(sourceExtension);pickup.disabled=!fresh() || !!requestInFlight || !source || !registered(source) || sourceExtension===String(leg.extension || '');card.appendChild(pickup);card.appendChild(node('p','mytel-action-note',sourceExtension?'Rings your extension '+sourceExtension+' first. Answer it to pick up this exact ringing call.':'Choose your registered extension above to pick up this ringing call.'));}
+        if(!hasTransfer && !hasPark)return;
+        var form=node('div','mytel-context-controls');form.setAttribute('data-control-channel',leg.channel || '');form.setAttribute('data-control-uniqueid',leg.uniqueid || '');var draft=draftFor(leg);
+        if(hasTransfer){var details=node('details','mytel-call-control');details.setAttribute('data-control-kind','transfer');details.appendChild(node('summary','','Transfer connected caller'));details.appendChild(node('p','mytel-action-note','Transfers the other party connected to extension '+leg.extension+'. This extension leaves the original call.'));var searchLabel=node('label','mytel-control-label','Destination');var search=node('input');search.type='search';search.placeholder='Find extension or name…';search.autocomplete='off';search.value=draft.query;search.setAttribute('data-role','transfer-search');searchLabel.appendChild(search);details.appendChild(searchLabel);var target=node('select','mytel-destination-select');target.size=4;target.setAttribute('aria-label','Destination extension');target.setAttribute('data-role','transfer-target');details.appendChild(target);details.appendChild(node('p','mytel-action-note',''));details.lastChild.setAttribute('data-destination-count','');var buttons=node('div','mytel-control-buttons');if(leg.canConsult){var consult=button('Consult first','consult-call');consult.classList.add('mytel-primary-button');buttons.appendChild(consult);}if(leg.canTransfer)buttons.appendChild(button('Transfer now','transfer-call'));details.appendChild(buttons);if(leg.canConsult)details.appendChild(node('p','mytel-action-note','Consult rings the destination. Complete or cancel using your phone’s configured transfer controls.'));form.appendChild(details);}
+        if(hasPark){var parkDetails=node('details','mytel-call-control');parkDetails.setAttribute('data-control-kind','park');parkDetails.appendChild(node('summary','','Park this party'));parkDetails.appendChild(node('p','mytel-action-note','Parks this exact party'+(leg.parkReturnExtension?'; the PBX announces the slot to extension '+leg.parkReturnExtension+'.':'.')));var label=node('label','mytel-control-label','Parking lot');var select=node('select');select.setAttribute('data-role','parking-lot');var placeholder=node('option','','Choose parking lot');placeholder.value='';select.appendChild(placeholder);lots.forEach(function(lot){var option=node('option','',String(lot.name || lot.id)+(lot.start!=null && lot.end!=null?' · slots '+lot.start+'–'+lot.end:''));option.value=String(lot.id);select.appendChild(option);});if(lots.length===1 && !draft.lot)draft.lot=String(lots[0].id);select.value=draft.lot;label.appendChild(select);parkDetails.appendChild(label);parkDetails.appendChild(button('Park selected party','park-call'));form.appendChild(parkDetails);}
+        card.appendChild(form);updateControlForm(form,leg);
     }
     function renderCallRows(container) {
         var filtered=model.filterCalls(calls,callQuery,callFilter,directionFilter);
@@ -151,10 +175,14 @@
             target.setAttribute('data-summary',signature);
         });
     }
+    function parkingGuidance(container){
+        var slots=model.list(model.get(controller(),'parkinglots',[]));var bySlot=Object.create(null);slots.forEach(function(slot){bySlot[String(model.get(slot,'extension',''))]=slot;});
+        Array.prototype.forEach.call(container.querySelectorAll('[data-parking-slot]'),function(element){var number=element.getAttribute('data-parking-slot');var slot=bySlot[number];var channel=model.get(slot,'Channel',null),uniqueid=model.get(slot,'Uniqueid',null);var known=model.get(latestSnapshot(),'parking_status_known',false)===true;var occupied=!!(channel && uniqueid && /^[0-9*#]{1,40}$/.test(number));var message=occupied?(fresh()&&known?'Dial '+number+' on your phone to retrieve this occupied slot.':'Last observed occupied. Reconnect before using the parking state.'):'';setText(element.querySelector('[data-parking-guidance]'),message);var status=element.querySelector('[data-parking-state]');if(status){var remaining=model.get(slot,'Remaining',null);setText(status,occupied?'Occupied'+(model.get(slot,'CallerIDNum',null)?' · '+model.get(slot,'CallerIDNum',''):'')+(remaining!=null?' · '+model.duration(remaining)+' remaining':''):known?'Available':'State not reported');element.setAttribute('data-occupied',occupied?'true':'false');}});
+    }
     function callDetails(leg, container) {
         var card=node('section','mytel-inspector-call');card.setAttribute('data-channel-key',String(leg.channel || leg.uniqueid || 'unknown'));
         var heading=node('div','mytel-inspector-call-heading');
-        heading.appendChild(node('h3','',leg.connected || leg.caller || 'Active channel'));
+        heading.appendChild(node('h3','',leg.extension?'Extension '+leg.extension:'External party'));
         heading.appendChild(node('span','mytel-call-state',leg.state || 'Not reported'));
         card.appendChild(heading);
         var facts=node('dl','mytel-detail-grid');
@@ -164,6 +192,7 @@
         facts.appendChild(node('dt','','Answered time (PBX)')); var answered=node('dd');var answeredClock=leg.answered!=null?clock(leg.answered):node('time','',model.duration(leg.answeredSeconds));if(leg.answered==null){answeredClock.setAttribute('data-answered-channel',leg.channel || '');answeredClock.setAttribute('data-answered-uniqueid',leg.uniqueid || '');}answered.appendChild(answeredClock); facts.appendChild(answered);
         appendPair(facts,'On hold',leg.hold==null?null:leg.hold?'Yes':'No'); appendPair(facts,'Direction',model.directionLabel(leg.direction),'mytel-call-direction-value '+(leg.direction || 'unknown'));
         card.appendChild(facts);
+        contextualControls(leg,card);
         var technical=node('details','mytel-channel-details');technical.appendChild(node('summary','','Channel details'));
         var metadata=node('dl','mytel-detail-grid');
         [['Channel',leg.channel],['Unique ID',leg.uniqueid],['Linked ID',leg.linkedid],['Bridge',leg.bridge],['Dialed number',leg.dnid],['Dialplan context',leg.context],['Dialplan destination',leg.destination],['Application',leg.application],['Application data',leg.appData],['Read codec',leg.readFormat],['Write codec',leg.writeFormat]].forEach(function (pair) { appendPair(metadata,pair[0],pair[1]); });
@@ -172,8 +201,8 @@
         end.classList.add('mytel-danger-button');
         end.disabled=!fresh() || !leg.channel || !leg.uniqueid || !!requestInFlight;
         if (!leg.channel || !leg.uniqueid) end.title='Unavailable: the PBX did not report a stable channel identifier.';
-        card.appendChild(end);
-        card.appendChild(node('p','mytel-action-note','Ends only the observed channel identified in these details.'));
+        if(access('hangup')){card.appendChild(end);card.appendChild(node('p','mytel-action-note','Ends only the observed channel identified in these details.'));}
+        var fullCall=calls.filter(function(call){return call.legs.some(function(candidate){return candidate.channel===leg.channel && candidate.uniqueid===leg.uniqueid;});})[0];if(selection && selection.type==='extension' && fullCall && fullCall.legs.length>1)card.appendChild(button('Manage complete call','inspect-call',{'data-call-id':fullCall.id}));
         container.appendChild(card);
     }
     function renderInspector(container, force) {
@@ -185,16 +214,17 @@
         var legs=phone?model.list(model.get(phone,'active',[])).map(function (input) { return model.normalizeLeg(input,model.get(phone,'extension',null)); }):call?call.legs:[];
         var memberships=phone?model.queueMemberships(model.list(model.get(controller(),'queues',null)),phone):[];
         var visibleAction=actionState();
-        var signature=stableSignature({selection:selection,description:model.get(phone,'description',null),registered:phone&&registered(phone),ip:model.get(phone,'ip',null),tech:model.get(phone,'tech',null),deviceState:model.get(phone,'device_state',null),registrationBasis:model.get(phone,'registration_basis',null),legs:legs,memberships:memberships,call:call,source:sourceExtension,fresh:fresh(),action:visibleAction});
+        var signature=stableSignature({selection:selection,description:model.get(phone,'description',null),registered:phone&&registered(phone),ip:model.get(phone,'ip',null),tech:model.get(phone,'tech',null),deviceState:model.get(phone,'device_state',null),registrationBasis:model.get(phone,'registration_basis',null),legs:legs,lots:parkingLots(),access:global.var_init&&global.var_init.OPERATOR_ACCESS,memberships:memberships,call:call,source:sourceExtension,fresh:fresh(),action:visibleAction});
         if (!force && signature===inspectorSignature) return;
         inspectorSignature=signature;
-        var openDetails=Array.prototype.map.call(target.querySelectorAll('.mytel-channel-details[open]'),function(details){return details.parentElement.getAttribute('data-channel-key');});
+        var openDetails=Array.prototype.map.call(target.querySelectorAll('.mytel-inspector-call details[open]'),function(details){return {channel:details.closest('.mytel-inspector-call').getAttribute('data-channel-key'),kind:details.getAttribute('data-control-kind') || 'technical'};});
         var focused=document.activeElement;var focusedChannel=focused && focused.closest('.mytel-inspector-call');
-        var focusState=target.contains(focused)?{action:focused.getAttribute('data-action'),channel:focusedChannel && focusedChannel.getAttribute('data-channel-key'),summary:focused.tagName==='SUMMARY'}:null;
+        var focusState=target.contains(focused)?{id:focused.id,role:focused.getAttribute('data-role'),action:focused.getAttribute('data-action'),kind:focused.closest('[data-control-kind]')&&focused.closest('[data-control-kind]').getAttribute('data-control-kind'),channel:focusedChannel && focusedChannel.getAttribute('data-channel-key'),summary:focused.tagName==='SUMMARY'}:null;
         target.replaceChildren();
         setText(dialog.querySelector('#mytel-inspector-title'),phone?'Extension '+model.get(phone,'extension',''):selection.type==='call'?'Live call details':'Extension details');
         var freshness=node('p','mytel-inspector-freshness',fresh()?'Live PBX data':'Last known data · reconnect before taking an action'); target.appendChild(freshness);
         if (!phone && !call) { target.appendChild(node('p','mytel-empty','This item is no longer present in the latest PBX data.')); return; }
+        if(access('call') || access('pickup'))target.appendChild(sourcePicker());
         if (phone) {
             target.appendChild(node('h3','mytel-inspector-name',model.get(phone,'description','')));
             var facts=node('dl','mytel-detail-grid');
@@ -207,8 +237,8 @@
             var callButton=button('Call extension '+model.get(phone,'extension',''),'callback',{'data-target-extension':model.get(phone,'extension','')});
             callButton.classList.add('mytel-primary-button');
             callButton.disabled=!fresh() || !source || !registered(source) || !registered(phone) || sourceExtension===String(model.get(phone,'extension','')) || !!requestInFlight;
-            callback.appendChild(callButton);
-            callback.appendChild(node('p','mytel-action-note',sourceExtension?'Rings your extension '+sourceExtension+' first, then connects to this extension.':'Choose your registered extension in “My extension” to place a callback call.'));
+            if(access('call'))callback.appendChild(callButton);
+            callback.appendChild(node('p','mytel-action-note',!access('call')?'Calling is not permitted for this account.':sourceExtension?'Rings your extension '+sourceExtension+' first, then connects to this extension.':'Choose your registered extension above to place a callback call.'));
             target.appendChild(callback);
             target.appendChild(node('h3','mytel-inspector-subtitle','Queue memberships ('+memberships.length+')'));
             if(!memberships.length)target.appendChild(node('p','mytel-action-note','No queue membership was reported for this extension.'));
@@ -221,18 +251,22 @@
         target.appendChild(node('h3','mytel-inspector-subtitle','Active calls / channels ('+legs.length+')'));
         if (!legs.length) target.appendChild(node('p','mytel-empty','No active calls on this extension.'));
         legs.forEach(function (leg) { callDetails(leg,target); });
-        Array.prototype.forEach.call(target.querySelectorAll('.mytel-inspector-call'),function(card){var key=card.getAttribute('data-channel-key');if(openDetails.indexOf(key)!==-1)card.querySelector('details').open=true;if(focusState && key===focusState.channel){var candidate=focusState.summary?card.querySelector('summary'):card.querySelector('[data-action="'+focusState.action+'"]');if(candidate && !candidate.disabled)candidate.focus();}});
+        updateSource(container);
+        Array.prototype.forEach.call(target.querySelectorAll('.mytel-inspector-call'),function(card){var key=card.getAttribute('data-channel-key');openDetails.forEach(function(detail){if(detail.channel===key){var restored=detail.kind==='technical'?card.querySelector('.mytel-channel-details'):card.querySelector('[data-control-kind="'+detail.kind+'"]');if(restored)restored.open=true;}});if(focusState && key===focusState.channel){var area=focusState.kind?card.querySelector('[data-control-kind="'+focusState.kind+'"]'):card;var candidate=focusState.summary?area&&area.querySelector('summary'):focusState.role?card.querySelector('[data-role="'+focusState.role+'"]'):card.querySelector('[data-action="'+focusState.action+'"]');if(candidate && !candidate.disabled)candidate.focus();}});
         if(focusState && !focusState.channel && focusState.action){var restored=target.querySelector('[data-action="'+focusState.action+'"]');if(restored && !restored.disabled)restored.focus();}
+        if(focusState && focusState.id){var restoredById=document.getElementById(focusState.id);if(restoredById && target.contains(restoredById) && !restoredById.disabled)restoredById.focus();}
     }
     function openInspector(type,id) {
         var container=root();var dialog=container && container.querySelector('#mytel-extension-inspector');if(!dialog)return;
-        selection={type:type,id:String(id)};inspectorSignature='';previousFocus=document.activeElement;
+        if(!dialog.open)previousFocus=document.activeElement;selection={type:type,id:String(id)};inspectorSignature='';
         renderInspector(container,true);
-        if (!dialog.open) { if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open',''); }
+        if (!dialog.open) { if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open',''); }else dialog.querySelector('[data-action=close-inspector]').focus();
     }
     function sendAction(payload) {
         if (requestInFlight) return;
         var key=selectionKey();
+        var privilege={callExtension:'call',pickupChannel:'pickup',transferChannel:'transfer',consultTransferChannel:'transfer',parkChannel:'park',hangupChannel:'hangup'}[payload.action];
+        if(!privilege || !access(privilege)){saveAction(key,{pending:false,message:'This action is not permitted for your account.',kind:'error'});return;}
         if (!fresh()) { saveAction(key,{pending:false,message:'Reconnect to the PBX before taking an action.',kind:'error'});return; }
         if (!global.jQuery || !global.var_init || !global.var_init.CSRF_TOKEN) { saveAction(key,{pending:false,message:'This session cannot send actions. Reload and sign in again.',kind:'error'});return; }
         var request={key:key};requestInFlight=request;saveAction(key,{pending:true,message:'',kind:'pending'});
@@ -242,6 +276,10 @@
             if(requestInFlight===request)requestInFlight=null;
             var result={pending:false,message:response.status==='success'?(response.message || 'Request accepted by the PBX.'):(response.message || 'The PBX could not complete this action.'),kind:response.status==='success'?'success':'error'};
             if(response.status==='success' && payload.action==='callExtension')result.message='Call requested. Answer your extension first; the PBX will then call the destination.';
+            if(response.status==='success' && payload.action==='pickupChannel')result.message='Pickup requested. Answer your extension to connect to this exact ringing call.';
+            if(response.status==='success' && payload.action==='consultTransferChannel')result.message='Consult transfer requested. Complete or cancel using your phone’s configured transfer controls.';
+            if(response.status==='success' && payload.action==='transferChannel')result.message='Transfer requested. Watch the live call status for the result.';
+            if(response.status==='success' && payload.action==='parkChannel')result.message='Parking requested. Wait for the PBX slot announcement and the next live parking update.';
             saveAction(key,result);
         }).fail(function (request) {
             requestInFlight=null;
@@ -254,18 +292,19 @@
         var latest=snapshot || model.get(controller(),'latestSnapshot',null);
         calls=model.collectCalls(phones,latest && Array.isArray(latest.live_calls)?latest.live_calls:null);
         calls.forEach(function(call){call.extensionNames=call.extensions.map(function(extension){return model.get(findPhone(extension),'description','');}).filter(model.present);});
-        updateSource(container);renderCallRows(container);queueMetrics(container);
+        updateSource(container);renderCallRows(container);queueMetrics(container);parkingGuidance(container);
         Array.prototype.forEach.call(container.querySelectorAll('[data-freshness]'),function (element) { setText(element,!loaded()?'Waiting for data':fresh()?'Live':'Last known data');element.setAttribute('data-fresh',fresh()?'true':'false'); });
         renderInspector(container,false);tickClocks(container);
     }
     function initialize() {
         var container=root();if(!container)return;
         container.classList.add('mytel-calls-ready');
-        try { sourceExtension=global.localStorage.getItem(sourceKey()) || ''; } catch(ignore) { /* Storage is optional. */ }
-        container.addEventListener('input',function (event) { if(event.target.id==='mytel-call-search'){callQuery=event.target.value;update();} });
+        try { var storage=preferenceStore();sourceExtension=storage&&storage.getItem(sourceKey()) || ''; } catch(ignore) { /* Storage is optional. */ }
+        container.addEventListener('input',function (event) { if(event.target.id==='mytel-call-search'){callQuery=event.target.value;update();}var form=event.target.closest('[data-control-channel]');if(form && event.target.getAttribute('data-role')==='transfer-search'){var leg=findLeg(form.getAttribute('data-control-channel'),form.getAttribute('data-control-uniqueid'));if(leg){var draft=draftFor(leg);draft.query=event.target.value;draft.target='';updateControlForm(form,leg);}} });
         container.addEventListener('change',function (event) {
             if(event.target.id==='mytel-call-state'){callFilter=event.target.value;update();}
-            if(event.target.id==='mytel-source-extension'){sourceExtension=event.target.value;try{global.localStorage.setItem(sourceKey(),sourceExtension);}catch(ignore){}renderInspector(container,true);}
+            if(event.target.hasAttribute('data-operator-source')){sourceExtension=event.target.value;try{var storage=preferenceStore();if(storage)storage.setItem(sourceKey(),sourceExtension);}catch(ignore){}updateSource(container);renderInspector(container,true);}
+            var form=event.target.closest('[data-control-channel]');if(form){var leg=findLeg(form.getAttribute('data-control-channel'),form.getAttribute('data-control-uniqueid'));if(leg){var draft=draftFor(leg);if(event.target.getAttribute('data-role')==='transfer-target')draft.target=event.target.value;if(event.target.getAttribute('data-role')==='parking-lot')draft.lot=event.target.value;updateControlForm(form,leg);}}
         });
         container.addEventListener('click',function (event) {
             var direction=event.target.closest('[data-call-direction]');
@@ -276,6 +315,10 @@
                 if(name==='inspect-call')openInspector('call',action.getAttribute('data-call-id'));
                 else if(name==='close-inspector')container.querySelector('#mytel-extension-inspector').close();
                 else if(name==='callback') { try{sendAction(model.callbackPayload(sourceExtension,action.getAttribute('data-target-extension')));}catch(error){saveAction(selectionKey(),{pending:false,message:error.message,kind:'error'});} }
+                else if(name==='pickup-call'){try{var picked=findLeg(action.getAttribute('data-channel'),action.getAttribute('data-uniqueid'));if(!findPhone(sourceExtension) || !registered(findPhone(sourceExtension)))throw new Error('Choose a registered operator extension.');sendAction(model.pickupPayload(picked,sourceExtension));}catch(error){saveAction(selectionKey(),{pending:false,message:error.message,kind:'error'});}}
+                else if(name==='transfer-call' || name==='consult-call' || name==='park-call'){
+                    var form=action.closest('[data-control-channel]');try{var leg=form&&findLeg(form.getAttribute('data-control-channel'),form.getAttribute('data-control-uniqueid'));if(!leg)throw new Error('This call is no longer in the latest live data.');var draft=draftFor(leg);if(name==='park-call'){if(global.confirm('Park this exact party'+(leg.parkReturnExtension?' with slot announcement to extension '+leg.parkReturnExtension:'')+'?'))sendAction(model.parkPayload(leg,draft.lot,parkingLots()));}else{if(!findPhone(draft.target))throw new Error('Choose a destination from the configured directory.');if(name==='consult-call' || global.confirm('Transfer the other party connected to extension '+leg.extension+' to extension '+draft.target+'?'))sendAction(model.transferPayload(leg,draft.target,name==='consult-call'));}}catch(error){saveAction(selectionKey(),{pending:false,message:error.message,kind:'error'});}
+                }
                 else if(name==='end-call') {
                     var channel=action.getAttribute('data-channel');var uniqueid=action.getAttribute('data-uniqueid');
                     if(channel && uniqueid && global.confirm('End this observed call? This will disconnect the selected channel.'))sendAction({action:'hangupChannel',channel:channel,uniqueid:uniqueid});

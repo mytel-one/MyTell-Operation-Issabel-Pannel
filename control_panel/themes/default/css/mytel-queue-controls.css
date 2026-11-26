@@ -1,0 +1,34 @@
+#controlPanelApplication .mytel-agents{container-type:inline-size}
+#controlPanelApplication [data-agent-workspace]{padding:14px;min-width:0}
+#controlPanelApplication .mytel-agent-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+#controlPanelApplication .mytel-agent-search-label{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:650;color:#4b6178;width:100%}
+#controlPanelApplication .mytel-agent-search{flex:1;min-width:120px;max-width:460px;padding:10px 13px;border:1px solid #cbd7e3;border-radius:9px;background:#fff;color:#102740;font:inherit;min-height:44px}
+#controlPanelApplication .mytel-agent-search:focus-visible,#controlPanelApplication .mytel-agent-action:focus-visible{outline:3px solid #ff9f22;outline-offset:2px}
+#controlPanelApplication .mytel-agent-note,#controlPanelApplication .mytel-agent-feedback{margin:7px 0 12px;color:#53677d;font-size:12px;line-height:1.6}
+#controlPanelApplication .mytel-agent-feedback:empty{display:none}
+#controlPanelApplication .mytel-agent-feedback{color:#194e7f;padding:9px 12px;background:#edf6ff;border-radius:8px}
+#controlPanelApplication .mytel-agent-list{display:grid;gap:0;max-height:560px;overflow:auto}
+#controlPanelApplication .mytel-agent-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(95px,.75fr);gap:12px;align-items:center;min-height:76px;padding:13px 3px;border-bottom:1px solid #e4eaf0}
+#controlPanelApplication .mytel-agent-row:last-child{border-bottom:0}
+#controlPanelApplication .mytel-agent-identity,#controlPanelApplication .mytel-agent-queue{display:flex;flex-direction:column;gap:5px;min-width:0;color:#102740;font-size:13px}
+#controlPanelApplication .mytel-agent-identity strong{font-weight:650;overflow-wrap:anywhere}
+#controlPanelApplication .mytel-agent-interface,#controlPanelApplication .mytel-agent-queue>span,#controlPanelApplication .mytel-agent-type{font-size:11px;color:#53677d;overflow-wrap:anywhere;direction:ltr;unicode-bidi:plaintext}
+#controlPanelApplication .mytel-agent-state{font-size:11px;font-weight:650;color:#657587;background:#edf0f4;padding:6px 9px;border-radius:6px;justify-self:start;line-height:1.35}
+#controlPanelApplication .mytel-agent-state.is-available{color:#16603e;background:#e9f6ef}
+#controlPanelApplication .mytel-agent-state.is-active{color:#8a520a;background:#fff3dd}
+#controlPanelApplication .mytel-agent-state.is-paused{color:#765a30;background:#f7efdf}
+#controlPanelApplication .mytel-agent-action{border:1px solid #b9cfe4;background:#f0f7ff;color:#144d7f;border-radius:8px;padding:9px 11px;min-height:44px;font-size:12px;font-weight:650;cursor:pointer}
+#controlPanelApplication .mytel-agent-action:hover:enabled{background:#dfedfb;border-color:#5aafff}
+#controlPanelApplication .mytel-agent-action:disabled{background:#f0f2f5;border-color:#dce2e9;color:#7c8898;cursor:not-allowed}
+#controlPanelApplication .mytel-agent-readonly{color:#6b7b8d;font-size:11px}
+#controlPanelApplication .mytel-agent-empty{padding:30px 12px;color:#687a8d;font-size:13px;text-align:center}
+#controlPanelApplication .mytel-agent-actions{display:flex;flex-wrap:wrap;gap:7px;justify-content:flex-end;min-width:0}
+#controlPanelApplication .mytel-agent-actions .mytel-agent-action{flex:1;min-width:90px}
+#controlPanelApplication .mytel-agent-signout:enabled{background:#fff;color:#8e3333;border-color:#d9bcbc}
+#controlPanelApplication .mytel-agent-membership-form{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid #e4eaf0;margin-bottom:12px}
+#controlPanelApplication .mytel-agent-membership-form[hidden]{display:none}
+#controlPanelApplication .mytel-agent-join-label{display:flex;flex:1;min-width:120px;flex-direction:column;gap:6px;color:#4b6178;font-size:12px;font-weight:650}
+#controlPanelApplication .mytel-agent-join-queue{width:100%;min-width:0;min-height:44px;border:1px solid #cbd7e3;border-radius:8px;padding:8px;background:#fff;color:#102740;font:inherit}
+#controlPanelApplication .mytel-agent-source-note{flex-basis:100%;margin:2px 0;color:#53677d;font-size:11px;line-height:1.5}
+@container(min-width:700px){#controlPanelApplication .mytel-agent-row{grid-template-columns:minmax(160px,1.5fr) minmax(100px,1fr) minmax(105px,.8fr) minmax(150px,1fr)}}
+@media(max-width:650px){#controlPanelApplication .mytel-agent-row{grid-template-columns:minmax(130px,1fr) minmax(90px,.75fr);gap:10px;padding:14px 2px}#controlPanelApplication .mytel-agent-action{justify-self:stretch}#controlPanelApplication .mytel-agent-search-label{align-items:flex-start;flex-direction:column;gap:7px}#controlPanelApplication .mytel-agent-search{box-sizing:border-box;width:100%;max-width:none;flex:auto}}

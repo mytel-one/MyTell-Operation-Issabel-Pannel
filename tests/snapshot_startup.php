@@ -132,6 +132,7 @@ $arrConf = array('dsn_conn_database' => 'synthetic-layout');
 loadSnapshotClass($module . '/libs/paloInterfaceSSE.class.php');
 // New versions use this pure response normalizer; older versions do not.
 if (is_file($module . '/libs/mytelLiveSnapshot.php')) require_once $module . '/libs/mytelLiveSnapshot.php';
+require_once $module . '/libs/mytelCallActionService.php';
 loadSnapshotClass($module . '/libs/paloControlPanelStatus.class.php');
 function collectSnapshot($mode, $deadline = null) {
     AGI_AsteriskManager2::$mode = $mode;

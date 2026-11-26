@@ -40,6 +40,12 @@ jobs:
           php tests/direction_regressions.php control_panel_en
           php tests/snapshot_startup.php control_panel
           php tests/snapshot_startup.php control_panel_en
+          for variant in control_panel control_panel_en; do
+            php tests/backend_operator.php "$variant"
+            php tests/queue_member_regressions.php "$variant"
+            php tests/queue_membership_regressions.php "$variant"
+            php tests/operator_access.php "$variant"
+          done
       - name: Browser logic regressions
         run: node --test tests/*.cjs
       - name: Installer regressions

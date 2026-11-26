@@ -23,6 +23,7 @@
   +----------------------------------------------------------------------+
   $Id: paloControlPanelStatus.class.php, Thu 08 Apr 2021 05:37:16 PM EDT, nicolas@issabel.com
 */
+require_once __DIR__ . '/mytelRequestSecurity.php';
 require_once 'libs/misc.lib.php';
 require_once 'libs/paloSantoDB.class.php';
 require_once 'AGI_AsteriskManager2.class.php';
@@ -47,6 +48,9 @@ class paloControlPanelStatus extends paloInterfaceSSE
     private $_snapshotDeadline = NULL;
     private $_liveChannels = array();
     private $_collectionStarted = NULL;
+    private $_parkingLotConfig = array();
+    private $_parkedCalls = array();
+    private $_parkingStatusKnown = FALSE;
 
     // Constructor - abrir conexión a base de datos y a AMI    
 	function __construct($snapshotOnly = FALSE)
@@ -94,7 +98,7 @@ class paloControlPanelStatus extends paloInterfaceSSE
                 if ($snapshotOnly && !in_array($regs[1], array('EndpointList', 'EndpointListComplete',
                     'PeerEntry', 'PeerlistComplete', 'Status', 'StatusComplete', 'QueueParams', 'QueueEntry',
                     'QueueMember', 'QueueStatusComplete', 'MeetmeList', 'MeetmeListComplete', 'ParkedCall',
-                    'ParkedCallsComplete', 'DAHDIShowChannels', 'DAHDIShowChannelsComplete'))) continue;
+                    'ParkedCallsComplete', 'Parkinglot', 'ParkinglotsComplete', 'DAHDIShowChannels', 'DAHDIShowChannelsComplete'))) continue;
                 if ($regs[1] != 'Default') {
                     $this->_ami->add_event_handler($regs[1], array($this, $sMetodo));
                 }
@@ -152,6 +156,10 @@ class paloControlPanelStatus extends paloInterfaceSSE
             unset($active);
         }
         unset($change);
+        require_once __DIR__ . '/mytelCallActionService.php';
+        $response = MytelCallActionService::decorateSnapshot($response, $this->_internalState['phones'], $this->_parkingLotConfig);
+        $response['parked_calls'] = array_values($this->_parkedCalls);
+        $response['parking_status_known'] = $this->_parkingStatusKnown;
         $response['generated_at'] = $response['timestamp'];
         $response['collection_ms'] = is_null($this->_collectionStarted) ? NULL : round((microtime(TRUE) - $this->_collectionStarted) * 1000, 1);
         return $response;
@@ -558,8 +566,14 @@ class paloControlPanelStatus extends paloInterfaceSSE
             if (isset($r['Response']) && $r['Response'] == 'Success') $this->_enumsInProgress++;
         }
  
+        // Optional runtime parking metadata. Unsupported servers keep controls unavailable.
+        if (method_exists($this->_ami, 'Parkinglots')) {
+            $r = $this->_ami->Parkinglots($this->_actionid);
+            if (isset($r['Response']) && $r['Response'] == 'Success') $this->_enumsInProgress++;
+        }
+
         // Obtener la información de todas las llamadas parqueadas
-        if (count($this->_internalState['parkinglots'])) {
+        if (count($this->_internalState['parkinglots']) || method_exists($this->_ami, 'Parkinglots')) {
             $r = $this->_ami->ParkedCalls($this->_actionid);
             if (isset($r['Response']) && $r['Response'] == 'Success') $this->_enumsInProgress++;
         }
@@ -868,7 +882,7 @@ class paloControlPanelStatus extends paloInterfaceSSE
             if ($member['Interface'] === $interface) { $index = $i; break; }
         }
         $member = isset($members[$index]) ? $members[$index] : array(
-            'Interface' => $interface, 'Status' => '0', 'Paused' => '0', 'MemberName' => $interface);
+            'Interface' => $interface, 'Status' => '0', 'Paused' => NULL, 'MemberName' => $interface);
         foreach (array('Status', 'Paused', 'MemberName', 'CallsTaken', 'LastCall', 'Penalty', 'InCall', 'Membership', 'PausedReason', 'LastPause', 'StateInterface') as $field)
             if (isset($params[$field])) $member[$field] = $params[$field];
         if (isset($params['Name']) && !isset($params['MemberName'])) $member['MemberName'] = $params['Name'];
@@ -1075,49 +1089,45 @@ class paloControlPanelStatus extends paloInterfaceSSE
      * independientemente cuando una llamada se parquea. Para la enumeración,
      * el ActionID estará seteado.
      */
+    function msg_Parkinglot($sEvent, $params, $sServer, $iPort)
+    {
+        if (!isset($params['ActionID'], $params['Name'], $params['StartSpace'], $params['StopSpace']) ||
+            $params['ActionID'] !== $this->_actionid || !mytelValidParkingLot($params['Name'])) return;
+        $start = (int)$params['StartSpace']; $end = (int)$params['StopSpace'];
+        if ($start < 1 || $end < $start || $end - $start > 10000) return;
+        $this->_parkingLotConfig[$params['Name']] = array('id'=>$params['Name'], 'name'=>$params['Name'],
+            'context'=>NULL, 'start'=>$start, 'end'=>$end, 'timeout'=>isset($params['Timeout']) ? max(0,(int)$params['Timeout']) : NULL);
+    }
+
+    function msg_ParkinglotsComplete($sEvent, $params, $sServer, $iPort)
+    {
+        if ($this->_enumsInProgress <= 0 || !isset($params['ActionID']) || $params['ActionID'] !== $this->_actionid) return;
+        $this->_enumsInProgress--;
+    }
+
     function msg_ParkedCall($sEvent, $params, $sServer, $iPort)
     {
-        $this->_dumpevent($sEvent, $params);
-
-        /*
-        Event: ParkedCall
-        Parkinglot: default
-        Exten: 71
-        Channel: SIP/1064-00000004
-        From: IAX2/1099-2234
-        Timeout: 41
-        Duration: 4
-        CallerIDNum: 1064
-        CallerIDName: Alex
-        ConnectedLineNum: 
-        ConnectedLineName: 
-        ActionID: gatito
-         */
-        /*
-        Event: ParkedCall
-        Privilege: call,all
-        Exten: 71
-        Channel: SIP/1064-00000013
-        Parkinglot: default
-        From: SIP/1065-00000014
-        Timeout: 45
-        CallerIDNum: 1064
-        CallerIDName: Alex
-        ConnectedLineNum: 1065
-        ConnectedLineName: device
-        Uniqueid: 1380209988.23
-         */         
-        if (isset($this->_internalState['parkinglots'][$params['Exten']])) {
-        	$parklot = &$this->_internalState['parkinglots'][$params['Exten']];
-            $inicioParqueo = time();
-            if (isset($params['Duration'])) $inicioParqueo -= (int)$params['Duration'];
-            $parklot['Channel'] = $params['Channel'];
-            $parklot['Since'] = $inicioParqueo;
-            $parklot['Timeout'] = (int)$params['Timeout'];
-            $this->_bModified = TRUE;
-        }
+        if (isset($params['ActionID']) && $params['ActionID'] !== $this->_actionid) return;
+        // Asterisk 12+ uses Parkee* and ParkingSpace; retain older Issabel events.
+        foreach (array('ParkingSpace'=>'Exten','ParkeeChannel'=>'Channel','ParkeeUniqueid'=>'Uniqueid',
+            'ParkingDuration'=>'Duration','ParkingTimeout'=>'Timeout','ParkeeCallerIDNum'=>'CallerIDNum',
+            'ParkeeCallerIDName'=>'CallerIDName') as $modern=>$legacy)
+            if (!isset($params[$legacy]) && isset($params[$modern])) $params[$legacy] = $params[$modern];
+        if (!isset($params['Exten'], $params['Channel']) || !is_scalar($params['Exten']) || !is_string($params['Channel'])) return;
+        $duration = isset($params['Duration']) ? max(0,(int)$params['Duration']) : 0;
+        $remaining = isset($params['Timeout']) ? max(0,(int)$params['Timeout']) : NULL;
+        $lot = isset($params['Parkinglot']) && is_string($params['Parkinglot']) ? $params['Parkinglot'] : NULL;
+        $record = array('extension'=>(string)$params['Exten'], 'Channel'=>$params['Channel'],
+            'Uniqueid'=>isset($params['Uniqueid']) && is_string($params['Uniqueid']) ? $params['Uniqueid'] : NULL,
+            'Parkinglot'=>$lot, 'Since'=>time()-$duration, 'Timeout'=>is_null($remaining) ? NULL : $remaining+$duration,
+            'Remaining'=>$remaining, 'CallerIDNum'=>$this->_filterUnknown($params,'CallerIDNum'),
+            'CallerIDName'=>$this->_filterUnknown($params,'CallerIDName'));
+        $this->_parkedCalls[($lot ?: '') . ':' . $record['extension']] = $record;
+        if (isset($this->_internalState['parkinglots'][$params['Exten']]))
+            $this->_internalState['parkinglots'][$params['Exten']] = $record;
+        $this->_bModified = TRUE;
     }
-    
+
     // Evento que termina la enumeración de ParkedCalls
     function msg_ParkedCallsComplete($sEvent, $params, $sServer, $iPort)
     {
@@ -1125,6 +1135,7 @@ class paloControlPanelStatus extends paloInterfaceSSE
 
         if ($this->_enumsInProgress <= 0 || (isset($params['ActionID']) && $params['ActionID'] != $this->_actionid)) return;
 
+        if (isset($params['ActionID']) && $params['ActionID'] === $this->_actionid) $this->_parkingStatusKnown = TRUE;
         $this->_enumsInProgress--;
     }
 

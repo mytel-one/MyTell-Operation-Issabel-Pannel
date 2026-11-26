@@ -45,7 +45,7 @@ $waiting = mytelBuildLiveSnapshot(array($a), $phones, array('600'=>array('extens
 verify($waiting['live_calls'][0]['state'] === 'Waiting' && $waiting['live_calls'][0]['channels'][0]['ChannelStateDesc'] === 'Up', 'PBX-answered queue callers remain waiting until QueueEntry removes them');
 // Exercise the real AMI parser, preserving repeated safe headers while excluding
 // unrelated channel variables from the normalized snapshot.
-class AGI_AsteriskManager {}
+class AGI_AsteriskManager { public $event_handlers=array(); public $server=''; public $port=0; }
 $amiSource = file_get_contents(dirname(__DIR__) . '/' . $variant . '/libs/AGI_AsteriskManager2.class.php');
 eval(substr($amiSource, strpos($amiSource, 'class AGI_AsteriskManager2')));
 $ami = (new ReflectionClass('AGI_AsteriskManager2'))->newInstanceWithoutConstructor();
@@ -64,5 +64,10 @@ $a['Variables']['DIRECTION'] = 'unrecognized-private-value';
 $a['Linkedid'] = 'older-origin-no-longer-visible';
 $unknownDirection = mytelBuildLiveSnapshot(array($a), $phones, array(), 1000);
 verify($unknownDirection['live_channels'][0]['direction'] === NULL && strpos(json_encode($unknownDirection), 'unrecognized-private-value') === FALSE, 'unrecognized direction variables remain private and do not invent a direction');
+$handled = 0;
+$ami->add_event_handler('MytelClosureFixture', function() use (&$handled) { $handled++; });
+$closureError = FALSE;
+try { $ami->process_event(array('Event'=>'MytelClosureFixture')); } catch (Throwable $error) { $closureError = TRUE; }
+verify(!$closureError && $handled === 1, 'real AMI driver dispatches callable Closure event collectors without a type error');
 echo "$checks checks; $failures failures\n";
 exit($failures ? 1 : 0);

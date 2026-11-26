@@ -92,6 +92,20 @@ check($state['iptrunks']['PJSIP/provider']['registered'] === TRUE && $state['ipt
 $panel->msg_EndpointList('EndpointList', array('ActionID'=>'test','ObjectName'=>'100','DeviceState'=>'Unavailable','Contacts'=>'100/sip:100@0.0.0.0:5060,'), '', 0);
 $state = getPanel($panel, '_internalState');
 check($state['phones']['PJSIP/100']['registered'] === FALSE && $state['phones']['PJSIP/100']['ip'] === NULL, 'unspecified contact addresses never mark a phone as registered');
+$parkingState = getPanel($panel, '_internalState');
+$parkingState['parkinglots'] = array(71=>array('extension'=>71,'Channel'=>NULL));
+setPanel($panel, '_internalState', $parkingState);
+$panel->msg_ParkedCall('ParkedCall', array('ActionID'=>'test','ParkingSpace'=>'71','ParkeeChannel'=>'PJSIP/100-00000001',
+    'ParkeeUniqueid'=>'1000.1','Parkinglot'=>'default','ParkingDuration'=>'10','ParkingTimeout'=>'35'), '', 0);
+$parkingState = getPanel($panel, '_internalState');
+check($parkingState['parkinglots'][71]['Channel']==='PJSIP/100-00000001' && $parkingState['parkinglots'][71]['Uniqueid']==='1000.1', 'modern ParkedCall occupancy retains the exact parked channel and uniqueid');
+check($parkingState['parkinglots'][71]['Parkinglot']==='default' && $parkingState['parkinglots'][71]['Remaining']===35 && $parkingState['parkinglots'][71]['Timeout']===45, 'parking occupancy distinguishes lot, elapsed and remaining timeout correctly');
+$panel->msg_Parkinglot('Parkinglot', array('ActionID'=>'test','Name'=>'default','StartSpace'=>'71','StopSpace'=>'78','Timeout'=>'45'), '', 0);
+$lots = getPanel($panel, '_parkingLotConfig');
+check($lots['default']['start']===71 && $lots['default']['end']===78 && $lots['default']['context']===NULL, 'runtime lot metadata reports only fields actually supplied by Asterisk');
+check(getPanel($panel, '_parkingStatusKnown')===FALSE, 'configured parking slots alone do not prove occupancy was read');
+$panel->msg_ParkedCallsComplete('ParkedCallsComplete', array('ActionID'=>'test'), '', 0);
+check(getPanel($panel, '_parkingStatusKnown')===TRUE, 'matching ParkedCalls completion explicitly proves occupancy is known');
 // Pure request-policy checks do not require a logged-in Issabel session.
 $security = $module . '/libs/mytelRequestSecurity.php';
 check(is_file($security), 'request policy helper is present');

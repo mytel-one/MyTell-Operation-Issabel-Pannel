@@ -52,6 +52,8 @@ function _moduleContent(&$smarty, $module_name)
     $local_templates_dir = "$base_dir/modules/$module_name/".$templates_dir.'/'.$arrConf['theme'];
 
     require_once __DIR__ . '/libs/mytelRequestSecurity.php';
+    require_once __DIR__ . '/libs/mytelOperatorAccess.php';
+    global $pACL;
     if (empty($_SESSION[$module_name]['csrfToken']))
         $_SESSION[$module_name]['csrfToken'] = bin2hex(random_bytes(32));
 
@@ -63,7 +65,7 @@ function _moduleContent(&$smarty, $module_name)
         $action = $_REQUEST['action'];
         $readActions = array('pbxSnapshot', 'pbxStatus');
         $writeActions = array('pbxStatusShutdown', 'updateExtensionPanel', 'updatePanelDesc',
-            'updatePanelSize', 'callExtension', 'hangupExtension', 'hangupChannel', 'voicemailExtension');
+            'updatePanelSize', 'callExtension', 'hangupExtension', 'hangupChannel', 'voicemailExtension', 'transferChannel', 'consultTransferChannel', 'parkChannel', 'pickupChannel', 'toggleQueueMemberPause', 'joinQueueMember', 'leaveQueueMember');
         if (!is_string($action) || !in_array($action, array_merge($readActions, $writeActions), TRUE))
             return handleJSON_unimplemented($smarty, $module_name, $local_templates_dir);
         if (in_array($action, $writeActions, TRUE)) {
@@ -71,11 +73,15 @@ function _moduleContent(&$smarty, $module_name)
             if (!mytelAuthorizeMutation(isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '',
                 $_SESSION[$module_name]['csrfToken'], $token))
                 return mytelJSONError('Request verification failed. Reload the panel and try again.', 403);
+            if (!mytelPermitAction($pACL, $_SESSION['issabel_user'] ?? '', $action)) {
+                mytelLogControl($_SESSION['issabel_user'] ?? '', $action, 'denied');
+                return mytelJSONError('Your account does not have permission for this operation.', 403);
+            }
             if (!mytelValidateMutation($action, $_POST))
                 return mytelJSONError('Invalid or missing parameters.', 400);
             // Handler input comes from the validated POST body, never query-string overrides.
             foreach ($_POST as $key => $value) $_REQUEST[$key] = $value;
-            if (in_array($action, array('callExtension', 'hangupExtension', 'hangupChannel', 'voicemailExtension'), TRUE))
+            if (in_array($action, array('callExtension', 'hangupExtension', 'hangupChannel', 'voicemailExtension', 'transferChannel', 'consultTransferChannel', 'parkChannel', 'pickupChannel', 'toggleQueueMemberPause', 'joinQueueMember', 'leaveQueueMember'), TRUE))
                 session_write_close();
         }
         $h = 'handleJSON_' . $action;
@@ -83,7 +89,13 @@ function _moduleContent(&$smarty, $module_name)
         return '<div class="mytel-setup-error" role="alert">' .
             htmlspecialchars(_tr('Panel database is unavailable. Ask the administrator to run the MyTel installer.'), ENT_QUOTES, 'UTF-8') . '</div>';
     }
-    return call_user_func($h, $smarty, $module_name, $local_templates_dir);
+    $response = call_user_func($h, $smarty, $module_name, $local_templates_dir);
+    if (isset($action) && isset(mytelActionPrivileges()[$action])) {
+        $result = json_decode($response, TRUE);
+        mytelLogControl($_SESSION['issabel_user'] ?? '', $action,
+            ($result['status'] ?? '') === 'success' ? 'accepted' : 'failed');
+    }
+    return $response;
 }
 
 function mytelJSONError($message, $status = 400)
@@ -140,6 +152,8 @@ $smarty->assign(array(
         // ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
     ));
 
+    global $pACL;
+    $operator = $_SESSION['issabel_user'] ?? '';
     // Inicialización del estado del módulo
     paloServerSentEvents::generarEstadoHash($module_name, array());
     $pUtils = new paloControlPanelUtils();
@@ -174,6 +188,9 @@ $smarty->assign(array(
             'ESTADO_CLIENTE_HASH'   =>  $_SESSION[$module_name]['estadoClienteHash'],
             'ESTADO_PANELES'        =>  $areaProp,
             'TIMESTAMP_START'       =>  time(),
+            'OPERATOR_ACCESS'         => mytelOperatorCapabilities($pACL, $operator),
+            'OPERATOR_TOOLS'          => mytelOperatorTools($pACL, $operator, dirname($_SERVER['SCRIPT_FILENAME'])),
+            'OPERATOR_KEY'            => hash('sha256', $operator),
             'CSRF_TOKEN'            =>  $_SESSION[$module_name]['csrfToken'],
 	   
 
@@ -363,6 +380,72 @@ function handleJSON_hangupChannel($smarty, $module_name, $local_templates_dir)
         'message'=>$success ? 'The selected call was ended.' : $utils->errMsg));
 }
 
+// Every operator control reaches this wrapper only after Issabel ACL, POST,
+// CSRF, scalar validation and privilege checks in _moduleContent.
+function mytelOperatorControlResponse($operation)
+{
+    require_once __DIR__ . '/libs/mytelCallActionService.php';
+    require_once __DIR__ . '/libs/mytelQueueMemberService.php';
+    $ami = new AGI_AsteriskManager2();
+    $deadline = microtime(TRUE) + 5;
+    $ami->setDeadline($deadline);
+    $database = NULL;
+    $success = FALSE;
+    $memberInterface = NULL;
+    $message = 'The PBX operation could not be confirmed. Refresh before trying again.';
+    try {
+        if (!$ami->connect('localhost', 'admin', obtenerClaveAMIAdmin(), 'off')) {
+            $message = 'Unable to connect to the PBX. Try again.';
+        } elseif (in_array($operation, array('toggleQueueMemberPause','joinQueueMember','leaveQueueMember'), TRUE)) {
+            if ($operation === 'joinQueueMember') $database = new paloDB(generarDSNSistema('asteriskuser', 'asterisk'));
+            $service = new MytelQueueMemberService($ami, $deadline, $database);
+            if ($operation === 'toggleQueueMemberPause') {
+                $success = $service->setPaused($_POST['queue'], $_POST['interface'], $_POST['paused']);
+                $message = $success ? ($service->changed ? 'The queue member pause state was updated.' : 'The queue member already has the requested state.') : $service->errMsg;
+            } elseif ($operation === 'joinQueueMember') {
+                $success = $service->join($_POST['queue'], $_POST['source']);
+                $memberInterface = isset($service->memberInterface) ? $service->memberInterface : NULL;
+                $message = $success ? ($service->changed ? 'The queue sign-in request was accepted.' : 'This operator is already a member of the queue.') : $service->errMsg;
+            } else {
+                $success = $service->leave($_POST['queue'], $_POST['interface']);
+                $message = $success ? 'The queue sign-out request was accepted.' : $service->errMsg;
+            }
+        } else {
+            $database = new paloDB(generarDSNSistema('asteriskuser', 'asterisk'));
+            $service = new MytelCallActionService($ami, $database, $deadline);
+            if ($operation === 'transferChannel' || $operation === 'consultTransferChannel') {
+                $consult = $operation === 'consultTransferChannel';
+                $success = $service->transferChannel($_POST['channel'], $_POST['uniqueid'], $_POST['target'], $consult);
+                $message = $success ? ($consult ? 'Consultation transfer requested. Complete or cancel using your phone transfer controls.' : 'The transfer request was accepted by the PBX.') : $service->errMsg;
+            } elseif ($operation === 'parkChannel') {
+                $success = $service->parkChannel($_POST['channel'], $_POST['uniqueid'], $_POST['lot']);
+                $message = $success ? 'The parking request was accepted. Check the live parking slots.' : $service->errMsg;
+            } elseif ($operation === 'pickupChannel') {
+                $success = $service->pickupChannel($_POST['channel'], $_POST['uniqueid'], $_POST['source']);
+                $message = $success ? 'Pickup requested. Answer your operator extension.' : $service->errMsg;
+            }
+        }
+    } catch (Throwable $error) {
+        $success = FALSE;
+        $message = 'The PBX operation could not be confirmed. Check live status before retrying.';
+    } finally {
+        $ami->disconnect();
+        if ($database) $database->disconnect();
+    }
+    Header('Content-Type: application/json');
+    Header('Cache-Control: no-store');
+    $json = new Services_JSON();
+    return $json->encode(array('status'=>$success ? 'success' : 'error', 'message'=>$message, 'member_interface'=>$memberInterface));
+}
+
+function handleJSON_transferChannel($smarty, $module_name, $local_templates_dir) { return mytelOperatorControlResponse('transferChannel'); }
+function handleJSON_consultTransferChannel($smarty, $module_name, $local_templates_dir) { return mytelOperatorControlResponse('consultTransferChannel'); }
+function handleJSON_parkChannel($smarty, $module_name, $local_templates_dir) { return mytelOperatorControlResponse('parkChannel'); }
+function handleJSON_pickupChannel($smarty, $module_name, $local_templates_dir) { return mytelOperatorControlResponse('pickupChannel'); }
+function handleJSON_toggleQueueMemberPause($smarty, $module_name, $local_templates_dir) { return mytelOperatorControlResponse('toggleQueueMemberPause'); }
+function handleJSON_joinQueueMember($smarty, $module_name, $local_templates_dir) { return mytelOperatorControlResponse('joinQueueMember'); }
+function handleJSON_leaveQueueMember($smarty, $module_name, $local_templates_dir) { return mytelOperatorControlResponse('leaveQueueMember'); }
+
 function handleJSON_voicemailExtension($smarty, $module_name, $local_templates_dir)
 {
     $respuesta = array(
@@ -397,7 +480,14 @@ function modificarReferenciasLibreriasJS($smarty, $module_name)
      */ 
     $sEmberRef = $sHandleBarsRef = $sjQueryRef = NULL;
     foreach (array_keys($listaLibsJS_modulo) as $k) {
-        if (strpos($listaLibsJS_modulo[$k], 'themes/default/js/jquery-') !== FALSE) {
+        // Issabel automatically includes every stylesheet and script here.
+        // panel.tpl loads these assets in dependency order with release versions.
+        // A second copy would bind two click handlers to a single call action.
+        if (preg_match('~themes/default/(?:js/mytel-(?:ui|call-model|calls|queue-controls)\.js|css/mytel(?:-queue-controls)?\.css)[\x22\x27?]~', $listaLibsJS_modulo[$k])) {
+            unset($listaLibsJS_modulo[$k]);
+        } elseif (strpos($listaLibsJS_modulo[$k], 'themes/default/js/javascript.js') !== FALSE) {
+            $listaLibsJS_modulo[$k] = str_replace('javascript.js', 'javascript.js?v=2.1.0', $listaLibsJS_modulo[$k]);
+        } elseif (strpos($listaLibsJS_modulo[$k], 'themes/default/js/jquery-') !== FALSE) {
             $sjQueryRef = $listaLibsJS_modulo[$k];
             unset($listaLibsJS_modulo[$k]);
         } elseif (strpos($listaLibsJS_modulo[$k], 'themes/default/js/handlebars-') !== FALSE) {

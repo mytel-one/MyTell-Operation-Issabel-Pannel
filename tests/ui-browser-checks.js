@@ -1,5 +1,6 @@
 /* Run this function with browser evaluate on the synthetic connected fixture. */
 async () => {
+    const fixtureLocation=new URL(window.location.href);if(!['127.0.0.1','localhost'].includes(fixtureLocation.hostname) || fixtureLocation.pathname!=='/artifacts/ui/preview.html' || !Array.isArray(window.fixtureActionLog) || !window.var_init || window.var_init.CSRF_TOKEN!=='synthetic-fixture-only')throw new Error('This browser action test is restricted to the local synthetic fixture.');
     if (!['127.0.0.1', 'localhost'].includes(location.hostname) ||
         !location.pathname.endsWith('/artifacts/ui/preview.html') ||
         !Array.isArray(window.fixtureActionLog) || typeof window.fixtureState !== 'function') {

@@ -30,7 +30,19 @@ Select **My extension** before placing a callback call. The PBX first rings that
 
 Ending an individual call requires its exact current channel identity. If the channel has ended or its identity no longer matches, refresh the state and select the current call. A stale row must never be used to end another call on the same extension.
 
-Call-control availability depends on a current authenticated session and a live PBX connection. The panel does not claim to provide transfer, recording playback or supervisor monitoring actions that are not implemented by this distribution.
+For a two-party conversation, open the local extension's channel details and select a configured internal destination. **Transfer** sends its peer to the destination immediately. **Consult** rings the destination and keeps the first caller waiting while you speak. Complete the consultation using the handset and your PBX's transfer settings.
+
+**Pickup** rings your selected operator phone to answer an identified ringing internal call. **Park** moves the selected channel into an available lot and uses the verified local peer as the parking origin. Expand **Call parking** to find occupied slots and dial the displayed slot from your phone.
+
+Use **Agents** to pause or resume an agent in a specific queue. Dynamic sign-in and sign-out require a separate permission. The panel checks live membership before changing it. Availability and membership labels update when Asterisk confirms the new state in a subsequent snapshot.
+
+## Users and tools
+
+In **System → Users → Group Permissions**, grant access to **MyTel Operation** and select the action privileges needed by that group. Module access alone permits observation. Dialing, pickup, transfer, parking, hangup, pause/resume, dynamic membership and shared layout edits are independently enforced on the server. Existing non-administrator groups with module access need explicit grants when upgrading from 2.0.x.
+
+**Operator tools** shows installed tools the current user can open, including the address book, conference rooms, CDR, voicemail and call recordings. Where FOP2 is installed, authorized users can open its advanced console inside the workspace or open it separately. FOP2 Manager opens separately. The FOP2 applications use their own authentication, permissions and licensing. Personal favorites and display preferences belong to the operator account in the current browser.
+
+To review control requests on the server, run `journalctl -t mytel-operation`. Entries identify the account, operation and result. An accepted request means the PBX accepted the command. The live call and queue views show the observed outcome.
 
 ## Keyboard and small screens
 

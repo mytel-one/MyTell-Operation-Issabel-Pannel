@@ -4,7 +4,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 template = '''<div id="controlPanelApplication" dir="rtl" data-language="fa">
-<link rel="stylesheet" href="modules/{$module_name}/themes/default/css/mytel.css?v=2.0.1">
+<link rel="stylesheet" href="modules/{$module_name}/themes/default/css/mytel.css?v=2.1.0">
+<link rel="stylesheet" href="modules/{$module_name}/themes/default/css/mytel-queue-controls.css?v=2.1.0">
 <script type="text/x-handlebars" data-template-name="desktop">
 {literal}
 <div class="mytel-workspace containerAll">
@@ -23,7 +24,8 @@ template = '''<div id="controlPanelApplication" dir="rtl" data-language="fa">
     <div><p class="mytel-eyebrow">فضای کار اپراتور</p><h1>مرکز کنترل تماس</h1><p class="mytel-description">وضعیت داخلی‌ها و صف‌های مرکز تلفن، در یک نگاه</p></div>
     <div class="mytel-update"><span class="mytel-live-dot"></span><span data-updated>در انتظار دریافت اطلاعات</span></div>
   </div>
-  <div class="mytel-operator-controls"><label for="mytel-source-extension">My extension <select id="mytel-source-extension" aria-describedby="mytel-callback-note"><option value="">Choose extension</option></select></label><p id="mytel-callback-note">Callback calls ring your extension first.</p></div>
+  <div class="mytel-operator-controls"><div class="mytel-source-control"><label for="mytel-source-extension">My extension <select id="mytel-source-extension" data-operator-source aria-describedby="mytel-callback-note"><option value="">Choose extension</option></select></label><p id="mytel-callback-note">Calls ring your extension first. Your choice is saved for this account.</p></div><nav class="mytel-workspace-nav" aria-label="Workspace sections"><button type="button" data-action="jump-calls">Live calls</button><button type="button" data-action="jump-directory">Directory <kbd>Ctrl K</kbd></button></nav><details class="mytel-operator-tools" data-operator-tools hidden><summary>Operator tools</summary><div data-operator-tool-links></div><p>Advanced consoles open separately and may require their own login.</p></details></div>
+  <p class="mytel-access-summary" data-access-summary></p>
   <div class="mytel-banner" data-banner role="status" hidden><span data-banner-text></span><button type="button" data-action="retry">تلاش دوباره</button></div>
   <section class="mytel-metrics" aria-label="خلاصه وضعیت مرکز تلفن">
     <div class="mytel-metric"><span class="mytel-metric-icon mytel-green" aria-hidden="true">↗</span><div><span class="mytel-metric-label">داخلی آنلاین</span><strong data-metric="online">—</strong></div><span class="mytel-metric-caption">آماده ارتباط</span></div>
@@ -42,6 +44,7 @@ template = '''<div id="controlPanelApplication" dir="rtl" data-language="fa">
     <section class="mytel-directory mytel-surface" aria-labelledby="mytel-directory-title">
       <div class="mytel-section-heading"><div><h2 id="mytel-directory-title">داخلی‌ها</h2><p><span data-total>—</span> داخلی در مرکز تلفن</p></div><span class="mytel-data-status" data-freshness>Waiting for data</span></div>
       <div class="mytel-directory-toolbar"><label class="mytel-search"><span aria-hidden="true">⌕</span><span class="mytel-visually-hidden">جستجوی نام یا شماره داخلی</span><input type="search" id="mytel-search" autocomplete="off" placeholder="جستجوی نام یا شماره داخلی…"></label><button type="button" class="mytel-secondary-button" data-action="groups" aria-pressed="false">گروه‌ها</button></div>
+      <div class="mytel-directory-views"><div class="mytel-view-tabs" role="group" aria-label="Directory quickview"><button type="button" data-directory-view="all" aria-pressed="true">All extensions</button><button type="button" data-directory-view="favorites" aria-pressed="false">★ Favorites <span data-favorites-count>—</span></button></div><label for="mytel-team"><span class="mytel-visually-hidden">Team</span><select id="mytel-team"><option value="all">All teams</option></select></label><div class="mytel-display-switch" role="group" aria-label="Directory layout"><button type="button" data-directory-display="cards" aria-pressed="true" title="Card view">▦<span class="mytel-visually-hidden">Cards</span></button><button type="button" data-directory-display="list" aria-pressed="false" title="Compact list">☷<span class="mytel-visually-hidden">List</span></button></div></div>
       <div class="mytel-filters" role="group" aria-label="فیلتر وضعیت داخلی"><button type="button" data-filter="all" aria-pressed="true">همه <span data-filter-count="all">—</span></button><button type="button" data-filter="online" aria-pressed="false">آنلاین <span data-filter-count="online">—</span></button><button type="button" data-filter="busy" aria-pressed="false">در مکالمه <span data-filter-count="busy">—</span></button><button type="button" data-filter="offline" aria-pressed="false">آفلاین <span data-filter-count="offline">—</span></button></div>
       <div class="mytel-directory-feedback" data-directory-feedback role="status">در حال دریافت داخلی‌ها…</div>
       <div class="mytel-directory-panels">
@@ -59,9 +62,10 @@ template = '''<div id="controlPanelApplication" dir="rtl" data-language="fa">
       <section class="mytel-surface mytel-queues"><div class="mytel-section-heading"><div><h2>صف‌های تماس <span class="mytel-call-count" data-queue-count>—</span></h2><p>پاسخ‌گویی و وضعیت کارشناسان</p></div><span class="mytel-data-status" data-freshness>Waiting for data</span></div>
         {{#view App.BaseSortableView}}{{#view App.PBXPanelView controllerBinding="queues" class="mytel-resource-panel"}}{{#if finishedloading}}{{#each}}{{view App.QueueView class="QueueView-large"}}{{else}}<p class="mytel-empty">صفی برای نمایش وجود ندارد.</p>{{/each}}{{else}}<p class="mytel-empty">در حال دریافت صف‌ها…</p>{{/if}}{{/view}}{{/view}}
       </section>
+      <section class="mytel-surface mytel-agents" aria-labelledby="mytel-agents-title"><div class="mytel-section-heading"><div><h2 id="mytel-agents-title">Live agents <span class="mytel-call-count" data-agent-count>—</span></h2><p>Queue membership, availability and pause state</p></div><span class="mytel-data-status" data-freshness>Waiting for data</span></div><div data-agent-workspace><p class="mytel-empty">Waiting for agent data…</p></div></section>
+      <section class="mytel-surface mytel-trunks"><div class="mytel-section-heading"><div><h2>IP trunks <span class="mytel-call-count" data-trunk-count>—</span></h2><p>Observed connection status and active channels</p></div><span class="mytel-data-status" data-freshness>Waiting for data</span></div>{{#view App.BaseSortableView}}{{#view App.PBXPanelView controllerBinding="iptrunks" class="mytel-resource-panel"}}{{#if finishedloading}}{{#each}}{{view App.IPTrunkView class="mytel-iptrunk-card"}}{{else}}<p class="mytel-empty mytel-empty-small">No trunks to display.</p>{{/each}}{{else}}<p class="mytel-empty mytel-empty-small">Waiting for trunk data…</p>{{/if}}{{/view}}{{/view}}</section>
       <section class="mytel-surface mytel-resources"><div class="mytel-section-heading"><div><h2>منابع مرکز تلفن</h2><p>ترانک‌ها، کنفرانس و پارک تماس</p></div></div>
         {{#view App.BaseSortableView}}
-          {{#view App.PBXPanelView controllerBinding="iptrunks" class="mytel-resource-panel"}}<h3>ترانک‌های IP</h3>{{#if finishedloading}}{{#each}}{{view App.IPTrunkView class="mytel-iptrunk-card"}}{{else}}<p class="mytel-empty mytel-empty-small">ترانکی برای نمایش وجود ندارد.</p>{{/each}}{{/if}}{{/view}}
           {{#view App.PBXPanelView controllerBinding="conferences" class="mytel-resource-panel"}}<h3>کنفرانس‌ها</h3>{{#if finishedloading}}{{#each}}{{view App.ConferenceView class="ConferenceView-large"}}{{else}}<p class="mytel-empty mytel-empty-small">کنفرانسی تعریف نشده است.</p>{{/each}}{{/if}}{{/view}}
           {{#view App.PBXPanelView controllerBinding="parkinglots" class="mytel-resource-panel"}}<details class="mytel-parking-collapse"><summary><span>پارک تماس</span><span class="mytel-parking-count">{{#if finishedloading}}{{length}} slots{{else}}Loading…{{/if}}</span></summary>{{#if finishedloading}}<div class="parkinglots-list">{{#each}}{{view App.ParkinglotView class="ParkinglotView-large"}}{{else}}<p class="mytel-empty mytel-empty-small">پارک تماسی تعریف نشده است.</p>{{/each}}</div>{{/if}}</details>{{/view}}
           {{#view App.PBXPanelView controllerBinding="dahdi" class="mytel-resource-panel mytel-dahdi"}}{{#if length}}<h3>خطوط DAHDI</h3>{{#each}}{{view App.DAHDISpanView}}{{/each}}{{/if}}{{/view}}
@@ -70,6 +74,7 @@ template = '''<div id="controlPanelApplication" dir="rtl" data-language="fa">
     </aside>
   </div>
   <dialog id="mytel-extension-inspector" class="mytel-inspector" aria-labelledby="mytel-inspector-title"><div class="mytel-inspector-heading"><div><p class="mytel-eyebrow">LIVE WORKSPACE</p><h2 id="mytel-inspector-title">Extension details</h2></div><button type="button" class="mytel-icon-button" data-action="close-inspector" aria-label="Close details">×</button></div><div data-inspector-content></div></dialog>
+  <dialog id="mytel-advanced-dialog" class="mytel-advanced-dialog" aria-labelledby="mytel-advanced-title"><div class="mytel-advanced-heading"><div><h2 id="mytel-advanced-title">Advanced operator console</h2><p>Uses the installed console’s own login and licensed features. No credentials are forwarded.</p></div><button type="button" class="mytel-icon-button" data-action="close-advanced" aria-label="Close advanced console">×</button></div><div data-advanced-frame-host></div><div class="mytel-advanced-footer"><a data-advanced-fallback target="_blank" rel="noopener noreferrer">Open in a new tab ↗</a><button type="button" class="mytel-secondary-button" data-action="close-advanced">Back to live calls</button></div></dialog>
   <footer class="mytel-footer"><span>MyTel Operation · Issabel</span><a href="https://mytel.one" target="_blank" rel="noopener noreferrer">mytel.one <span aria-hidden="true">↗</span></a></footer>
 </div>
 {/literal}
@@ -81,7 +86,7 @@ template = '''<div id="controlPanelApplication" dir="rtl" data-language="fa">
   <div class="mytel-extension-top"><span class="mytel-extension-number" dir="ltr">{{extension}}</span><span class="mytel-extension-state">{{#if registered}}آنلاین{{else}}آفلاین{{/if}}</span></div>
   <div class="mytel-extension-name">{{description}}</div>
   <div class="mytel-extension-activity">{{#each active}}<span class="monitor" {{bindAttr title="Channel"}}><span dir="ltr">{{remoteExten}}</span><time dir="ltr">{{formatSince}}</time></span>{{else}}<span class="mytel-idle-label">{{#if registered}}آماده ارتباط{{else}}ثبت‌نشده{{/if}}</span>{{/each}}</div>
-  <div class="mytel-extension-tools"><span class="phone-icon" title="برای برقراری تماس، آیکون تلفن را روی مقصد بکشید">{{view App.DraggablePhoneIconView iconBinding="view.extensionIcon"}}</span>{{#if unreadMail}}<span class="mytel-mail" title="پیام صوتی جدید">✉ {{NewMessages}}</span>{{/if}}<a class="pbxtooltip mytel-info" href="#" aria-label="جزئیات داخلی"><span aria-hidden="true">i</span><div>{{channel}}<br>{{description}}{{#if registered}}<br><span dir="ltr">{{ip}}</span>{{/if}}</div></a></div>
+  <div class="mytel-extension-tools"><button type="button" class="mytel-favorite-button" data-action="favorite" aria-pressed="false" aria-label="Add extension to favorites">☆</button><span class="phone-icon" title="برای برقراری تماس، آیکون تلفن را روی مقصد بکشید">{{view App.DraggablePhoneIconView iconBinding="view.extensionIcon"}}</span>{{#if unreadMail}}<span class="mytel-mail" title="پیام صوتی جدید">✉ {{NewMessages}}</span>{{/if}}<a class="pbxtooltip mytel-info" href="#" aria-label="جزئیات داخلی"><span aria-hidden="true">i</span><div>{{channel}}<br>{{description}}{{#if registered}}<br><span dir="ltr">{{ip}}</span>{{/if}}</div></a></div>
 </div>
 {/literal}
 </script>
@@ -97,16 +102,17 @@ template = '''<div id="controlPanelApplication" dir="rtl" data-language="fa">
 {/literal}
 </script>
 
-<script type="text/x-handlebars" data-template-name="iptrunk">{literal}<div class="mytel-resource mytel-iptrunk"><span class="mytel-resource-icon" aria-hidden="true">⇄</span><div><strong dir="ltr">{{channel}}</strong><span class="mytel-resource-state">{{#if registered}}متصل{{else}}ثبت‌نشده{{/if}}</span>{{#each active}}<span class="monitor" dir="ltr">{{CallerIDNum}} · {{formatSince}}</span>{{/each}}</div></div>{/literal}</script>
+<script type="text/x-handlebars" data-template-name="iptrunk">{literal}<div class="mytel-resource mytel-iptrunk"><span class="mytel-resource-icon" aria-hidden="true">⇄</span><div><strong dir="ltr">{{channel}}</strong><span class="mytel-resource-state">{{#if registered}}متصل{{else}}ثبت‌نشده{{/if}}</span><span class="mytel-resource-ip">{{#if ip}}{{ip}}{{else}}IP not reported{{/if}} · {{active.length}} active channels</span>{{#each active}}<span class="monitor" dir="ltr">{{CallerIDNum}} · {{formatSince}}</span>{{/each}}</div></div>{/literal}</script>
 <script type="text/x-handlebars" data-template-name="conference">{literal}<div class="mytel-resource"><span class="mytel-resource-icon" aria-hidden="true">♧</span><div><strong>{{extension}} · {{description}}</strong><span>{{callers.length}} شرکت‌کننده {{#if callers}}· {{formatSince}}{{/if}}</span></div>{{view App.DroppableIconView icon="{/literal}modules/{$module_name}/images/conference.png{literal}"}}</div>{/literal}</script>
-<script type="text/x-handlebars" data-template-name="parkinglot">{literal}<div class="mytel-resource"><span class="mytel-resource-icon" aria-hidden="true">P</span><div><strong>پارک {{extension}}</strong><span>{{#if shortchannel}}{{shortchannel}} · {{formatTimeout}}{{else}}آزاد{{/if}}</span></div>{{view App.DroppableIconView icon="{/literal}modules/{$module_name}/images/parking.png{literal}"}}</div>{/literal}</script>
+<script type="text/x-handlebars" data-template-name="parkinglot">{literal}<div class="mytel-resource" {{bindAttr data-parking-slot="extension"}}><span class="mytel-resource-icon" aria-hidden="true">P</span><div><strong>پارک {{extension}}</strong><span data-parking-state>{{#if shortchannel}}{{shortchannel}} · {{formatTimeout}}{{else}}State not reported{{/if}}</span><span class="mytel-parking-guidance" data-parking-guidance></span><div data-parking-actions></div></div><img class="icon mytel-parking-static-icon" src="{/literal}modules/{$module_name}/images/parking.png{literal}" alt=""></div>{/literal}</script>
 <script type="text/x-handlebars" data-template-name="dahdispan">{literal}<div class="mytel-resource"><span class="mytel-resource-icon" aria-hidden="true">⇄</span><div><strong dir="ltr">DAHDI/{{span}}</strong><span dir="ltr">{{formatChanRange}}</span></div></div>{/literal}</script>
 <script type="text/x-handlebars" data-template-name="editable-title">{literal}{{#if editing}}{{view Ember.TextField valueBinding="description"}}<button type="button" {{action "save" bubbles=false}}>ذخیره</button>{{else}}<span>{{description}}</span><span class="mytel-group-count">{{length}}</span><button type="button" class="paneledittitle" {{action "edit" bubbles=false}}>ویرایش نام</button>{{/if}}{/literal}</script>
 </div>
 <script type="text/javascript">var arrLang_main = {$ARRLANG_MAIN}; var var_init = {$VAR_INIT};</script>
-<script src="modules/{$module_name}/themes/default/js/mytel-ui.js?v=2.0.1" defer></script>
-<script src="modules/{$module_name}/themes/default/js/mytel-call-model.js?v=2.0.1" defer></script>
-<script src="modules/{$module_name}/themes/default/js/mytel-calls.js?v=2.0.1" defer></script>
+<script src="modules/{$module_name}/themes/default/js/mytel-ui.js?v=2.1.0" defer></script>
+<script src="modules/{$module_name}/themes/default/js/mytel-call-model.js?v=2.1.0" defer></script>
+<script src="modules/{$module_name}/themes/default/js/mytel-calls.js?v=2.1.0" defer></script>
+<script src="modules/{$module_name}/themes/default/js/mytel-queue-controls.js?v=2.1.0" defer></script>
 '''
 
 areas = []

@@ -127,3 +127,37 @@ test('direction filters combine with call status and search while preserving gro
     assert.deepEqual(model.filterCalls(calls,'','all','unknown').map(call=>call.id),['unknown']);
     assert.equal(model.filterCalls(calls,'','all','outgoing').length,1);
 });
+
+test('contextual call controls require explicit capabilities and exact observed identities', () => {
+    const leg=model.normalizeLeg({...channel('PJSIP/202-a','abc123','uid-2'),local_extension:'202',actions:{transfer:true,consult:true,park:true,pickup:true,park_return_extension:'201'}});
+    assert.deepEqual(model.transferPayload(leg,'205',false),{action:'transferChannel',channel:'PJSIP/202-a',uniqueid:'uid-2',target:'205'});
+    assert.equal(model.transferPayload(leg,'205',true).action,'consultTransferChannel');
+    assert.deepEqual(model.parkPayload(leg,'main',[{id:'main'}]),{action:'parkChannel',channel:'PJSIP/202-a',uniqueid:'uid-2',lot:'main'});
+    assert.equal(model.pickupPayload(leg,'201').source,'201');
+    assert.throws(()=>model.transferPayload(leg,'202',false));
+    assert.throws(()=>model.parkPayload(leg,'invented',[{id:'main'}]));
+    assert.throws(()=>model.pickupPayload(leg,'202'));
+    assert.throws(()=>model.transferPayload({...leg,channel:'PJSIP/202\r\nAction: Hangup'},'205',false));
+    assert.throws(()=>model.transferPayload({...leg,canTransfer:false},'205',false));
+    assert.throws(()=>model.parkPayload({...leg,canPark:false},'main',[{id:'main'}]));
+});
+
+test('destination search uses configured contacts, preserves offline evidence and prioritizes favorites', () => {
+    const options=model.destinationOptions([{extension:'1000',description:'Sales',registered:true},{extension:'201',description:'Reception',registered:false},{extension:'202',description:'Operator',registered:true},{extension:'205',description:'Sales lead <script>',registered:true}],'sales','202',['205']);
+    assert.deepEqual(options.map(item=>item.extension),['205','1000']);
+    assert.equal(options[0].name,'Sales lead <script>');
+    assert.equal(model.destinationOptions([{extension:'201',description:'Reception',registered:false}],'','',[])[0].registered,false);
+    assert.equal(model.destinationOptions([{extension:'202',description:'Operator'}],'','202',[]).length,0);
+});
+
+test('missing or string-valued capability flags never create actionable controls', () => {
+    const leg=model.normalizeLeg({...channel('one','abc123','uid-1'),actions:{transfer:'true',park:1,pickup:'1'}});
+    assert.equal(leg.canTransfer,false);assert.equal(leg.canPark,false);assert.equal(leg.canPickup,false);assert.equal(leg.canConsult,false);
+});
+
+test('a verified local ringing leg remains visible when the PBX has already answered the trunk',()=>{
+    const calls=model.collectCalls([],[{id:'incoming',state:'Up',channels:[{Channel:'PJSIP/trunk-a',ChannelStateDesc:'Up'},{Channel:'PJSIP/201-b',local_extension:'201',ChannelStateDesc:'Ringing'}]}]);
+    assert.equal(calls[0].state,'ringing');
+    const unrelated=model.collectCalls([],[{id:'other',state:'Up',channels:[{Channel:'PJSIP/201-a',local_extension:'201',ChannelStateDesc:'Up'},{Channel:'PJSIP/trunk-b',ChannelStateDesc:'Ringing'}]}]);
+    assert.equal(unrelated[0].state,'in-call');
+});

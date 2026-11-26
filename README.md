@@ -6,6 +6,8 @@
 
 A responsive operator console for Issabel 5, with a white interface, MyTel blue and amber accents, live PBX snapshots, extension search and status filters. English is the default; an optional Persian RTL variant is included.
 
+Version 2.1 adds consultation and blind transfer, directed pickup, call parking, queue-agent controls and a personal favorites list. Administrators grant each action in Issabel Group Permissions. The workspace also opens the installed FOP2 console, FOP2 Manager, recordings, voicemail and CDR tools when the signed-in account can access them. See the [feature comparison](docs/FOP2-COMPARISON.md).
+
 ![English operator workspace with synthetic demonstration data](docs/images/operator-workspace-demo.jpg)
 
 The preview contains synthetic test data. Live information comes from your own PBX.
@@ -16,8 +18,8 @@ The preview contains synthetic test data. Live information comes from your own P
 
 ```bash
 curl -fL --retry 3 -o /root/mytel-operation-install.sh \
-  https://raw.githubusercontent.com/mytel-one/MyTell-Operation-Issabel-Pannel/v2.0.1/install.sh
-bash /root/mytel-operation-install.sh --ref v2.0.1 --lang en
+  https://raw.githubusercontent.com/mytel-one/MyTell-Operation-Issabel-Pannel/v2.1.0/install.sh
+bash /root/mytel-operation-install.sh --ref v2.1.0 --lang en
 ```
 
 سپس در ایزابل از منوی **PBX → MyTel Operation** وارد شوید؛ آدرس مستقیم:
@@ -33,7 +35,7 @@ https://YOUR-ISSABEL/index.php?menu=control_panel
 English is the default. To select the optional Persian RTL interface instead:
 
 ```bash
-bash /root/mytel-operation-install.sh --ref v2.0.1 --lang fa
+bash /root/mytel-operation-install.sh --ref v2.1.0 --lang fa
 ```
 
 For an extracted release or checkout, the installer resolves the package relative to its own location:
@@ -71,7 +73,7 @@ Before a manual rollback, close panel tabs and retain the current backup. Follow
 
 ## Compatibility and verification
 
-Target acceptance is recorded in [the release verification report](docs/releases/2.0.0/verification.md). The verified target is Issabel 5 on Rocky Linux 8.10, PHP 7.4 and Asterisk 20. Other versions require their own acceptance check.
+Target acceptance is recorded in [the release verification report](docs/releases/2.1.0/verification.md). The verified target is Issabel 5 on Rocky Linux 8.10, PHP 7.4 and Asterisk 20. Other versions require their own acceptance check.
 
 No application can be certified free of every possible bug. Automated regressions and target checks document the behavior actually exercised; real handset audio and production call-control workflows require suitable test extensions.
 
@@ -107,6 +109,6 @@ For a populated visual fixture, run `python3 tests/ui-preview.py`, serve this ch
 
 This is a modified distribution of [IssabelCallMonitoring / voiz-issabel-monitoring](https://github.com/voipiran/voiz-issabel-monitoring), developed by Hamed Koohfallah / VOIPIRAN, building on the PaloSanto/Issabel operator module. Existing source copyright and GPL notices are retained.
 
-MyTel modifications dated **2026-11-18** include the bilingual visual redesign, installation/recovery changes and runtime/security fixes. See [CHANGELOG.md](CHANGELOG.md) and [the test evidence](docs/releases/2.0.0/verification.md).
+MyTel modifications through **2026-11-26** include the bilingual visual redesign, installation/recovery changes and runtime/security fixes. See [CHANGELOG.md](CHANGELOG.md) and [the test evidence](docs/releases/2.1.0/verification.md).
 
 The module is distributed under [GPL-2.0](LICENSE), without warranty. Bundled open fonts retain their own OFL notices. MyTel branding identifies this distribution and does not replace the upstream authorship notices.

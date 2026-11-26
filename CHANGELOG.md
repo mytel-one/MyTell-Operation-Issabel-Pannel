@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 — 2026-11-26
+
+- Added contextual blind transfer, consultation transfer, directed pickup and call parking with fresh channel identity checks.
+- Added an Agents view and group privileges for queue actions. Issabel administrators can grant dialing, transfer, pickup, parking, hangup, queue and layout privileges independently.
+- Added account-specific directory favorites, team filters and operator tools. Authorized users can open their installed FOP2 console and manager alongside Issabel call records, recordings and voicemail.
+
 ## 2.0.1 — 2026-11-18
 
 - Recognize idle PJSIP handsets with a registered contact when qualify is disabled.

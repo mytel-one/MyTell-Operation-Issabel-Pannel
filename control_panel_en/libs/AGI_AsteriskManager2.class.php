@@ -444,8 +444,7 @@ class AGI_AsteriskManager2 extends AGI_AsteriskManager
       if(isset($this->event_handlers[$e])) $handler = $this->event_handlers[$e];
       elseif(isset($this->event_handlers['*'])) $handler = $this->event_handlers['*'];
 
-      if ((is_array($handler) && count($handler) >= 2 && is_object($handler[0]) && 
-        method_exists($handler[0], $handler[1])) || function_exists($handler))
+      if (is_callable($handler))
       {
         $ret = call_user_func($handler, $e, $parameters, $this->server, $this->port);
       }
@@ -474,6 +473,11 @@ class AGI_AsteriskManager2 extends AGI_AsteriskManager
         if ($actionid) $parameters['ActionID'] = $actionid;
         $parameters['Variables'] = 'CDR(answer,u),CHANNEL(onhold),DIRECTION';
         return $this->send_request('Status', $parameters);
+    }
+
+    function Parkinglots($actionid = NULL)
+    {
+        return $this->send_request('Parkinglots', $actionid ? array('ActionID'=>$actionid) : array());
     }
 
     function MeetmeList($conference = NULL, $actionid = NULL)

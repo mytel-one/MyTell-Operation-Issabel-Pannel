@@ -24,6 +24,7 @@
     function normalizeLeg(input, extension) {
         var caller = get(input, 'CallerIDNum', null);
         var connected = get(input, 'ConnectedLineNum', null);
+        var actions=get(input,'actions',{});
         return {
             channel: get(input, 'Channel', null), uniqueid: get(input, 'Uniqueid', get(input, 'uniqueid', null)),
             linkedid: get(input, 'Linkedid', get(input, 'linkedid', null)), extension: extension || get(input, 'local_extension',get(input, 'localExtension', get(input, 'ownext', null))),
@@ -35,12 +36,15 @@
             bridge: get(input, 'BridgeID', null), context: get(input, 'Context', null),
             destination: get(input, 'Extension', null), application: get(input, 'Application', null),
             appData: get(input, 'AppData', null), dnid: get(input, 'DNID', null),
-            readFormat: get(input, 'Readformat', null), writeFormat: get(input, 'Writeformat', null)
+            readFormat: get(input, 'Readformat', null), writeFormat: get(input, 'Writeformat', null),
+            canTransfer:get(actions,'transfer',false)===true,canConsult:get(actions,'consult',false)===true,canPark:get(actions,'park',false)===true,canPickup:get(actions,'pickup',false)===true,
+            parkReturnExtension:get(actions,'park_return_extension',get(input,'park_return_extension',null))
         };
     }
     function stateFor(legs, reported) {
-        if (legs.some(function (leg) { return leg.hold === true; })) return 'hold';
         if (/wait|queue/i.test(String(reported || ''))) return 'waiting';
+        if(legs.some(function(leg){return leg.extension!=null && /^Ring/i.test(leg.state || '');}))return 'ringing';
+        if (legs.some(function (leg) { return leg.hold === true; })) return 'hold';
         if (legs.some(function (leg) { return leg.state === 'Up'; })) return 'in-call';
         if (legs.some(function (leg) { return /^Ring/i.test(leg.state || ''); })) return 'ringing';
         var state = String(reported || '').toLowerCase();
@@ -136,6 +140,29 @@
         if (!/^[0-9*#]{1,40}$/.test(String(source)) || !/^[0-9*#]{1,40}$/.test(String(target)) || String(source)===String(target)) throw new Error('Choose different, valid source and destination extensions.');
         return {action:'callExtension',source:String(source),target:String(target)};
     }
+    function observedIdentity(leg){
+        if(!leg || typeof leg.channel!=='string' || typeof leg.uniqueid!=='string' || !leg.channel || !leg.uniqueid || leg.channel.length>256 || leg.uniqueid.length>128 || /[\r\n\0]/.test(leg.channel+leg.uniqueid))throw new Error('This call no longer has a usable channel identity. Refresh its live status.');
+        return {channel:leg.channel,uniqueid:leg.uniqueid};
+    }
+    function transferPayload(leg,target,consult){
+        if(consult?!leg.canConsult:!leg.canTransfer)throw new Error('Transfer is not available for this call.');
+        if(!/^[0-9*#]{1,40}$/.test(String(target)) || String(target)===String(leg.extension || ''))throw new Error('Choose a different configured destination extension.');
+        var identity=observedIdentity(leg);return {action:consult?'consultTransferChannel':'transferChannel',channel:identity.channel,uniqueid:identity.uniqueid,target:String(target)};
+    }
+    function parkPayload(leg,lot,parkingLots){
+        if(!leg.canPark)throw new Error('Parking is not available for this call.');
+        if(!Array.isArray(parkingLots) || !parkingLots.some(function(item){return String(item.id)===String(lot);}))throw new Error('Choose a parking lot reported by this PBX.');
+        var identity=observedIdentity(leg);return {action:'parkChannel',channel:identity.channel,uniqueid:identity.uniqueid,lot:String(lot)};
+    }
+    function pickupPayload(leg,source){
+        if(!leg.canPickup)throw new Error('Pickup is not available for this ringing call.');
+        if(!/^[0-9*#]{1,40}$/.test(String(source)) || String(source)===String(leg.extension || ''))throw new Error('Choose a different registered operator extension to pick up this call.');
+        var identity=observedIdentity(leg);return {action:'pickupChannel',channel:identity.channel,uniqueid:identity.uniqueid,source:String(source)};
+    }
+    function destinationOptions(phones,query,exclude,favorites){
+        var normalize=global.MyTelUI?global.MyTelUI.normalize:function(value){return String(value).toLowerCase().trim();};var search=normalize(query || '');favorites=favorites || [];
+        return phones.filter(function(phone){return String(get(phone,'extension',''))!==String(exclude || '') && normalize(get(phone,'extension','')+' '+get(phone,'description','')).indexOf(search)!==-1;}).map(function(phone){return {extension:String(get(phone,'extension','')),name:String(get(phone,'description','')),registered:[true,1,'1'].indexOf(get(phone,'registered',false))!==-1,favorite:favorites.indexOf(String(get(phone,'extension','')))!==-1};}).sort(function(a,b){return Number(b.favorite)-Number(a.favorite) || a.extension.localeCompare(b.extension,undefined,{numeric:true});});
+    }
     function queueMemberships(queues,phone) {
         var extension=String(get(phone,'extension',''));
         var channel=String(get(phone,'channel',''));
@@ -153,7 +180,7 @@
         });
         return output;
     }
-    var api = {get:get,list:list,present:present,normalizeLeg:normalizeLeg,collectCalls:collectCalls,filterCalls:filterCalls,duration:duration,queueSummary:queueSummary,callbackPayload:callbackPayload,queueMemberships:queueMemberships,normalizeDirection:normalizeDirection,directionLabel:directionLabel,directionTotals:directionTotals};
+    var api = {get:get,list:list,present:present,normalizeLeg:normalizeLeg,collectCalls:collectCalls,filterCalls:filterCalls,duration:duration,queueSummary:queueSummary,callbackPayload:callbackPayload,queueMemberships:queueMemberships,normalizeDirection:normalizeDirection,directionLabel:directionLabel,directionTotals:directionTotals,observedIdentity:observedIdentity,transferPayload:transferPayload,parkPayload:parkPayload,pickupPayload:pickupPayload,destinationOptions:destinationOptions};
     if (typeof module!=='undefined' && module.exports) module.exports=api;
     else global.MyTelCallModel=api;
 }(typeof window!=='undefined'?window:globalThis));
